@@ -8,6 +8,14 @@ struct SSAValue <: Address
     index::Int # pointer to the instruction the computes the value
 end
 
+"""
+External input to the program.
+It is considered a immutable value.
+"""
+struct InputRef <: Address
+    symbol::Symbol
+end
+
 abstract type Instruction end
 abstract type LinearInstruction <: Instruction end
 abstract type BranchInstruction <: Instruction end
@@ -15,14 +23,6 @@ abstract type BranchInstruction <: Instruction end
 "Constant value to be encoded directly into the IR"
 struct Const{T} <: LinearInstruction
     val::T
-end
-
-"""
-External input to the program.
-It is considered a immutable variable.
-"""
-struct InputRef <: LinearInstruction
-    symbol::Symbol
 end
 
 abstract type AbstractCall <: LinearInstruction end
@@ -54,12 +54,12 @@ mutable struct ImpureCall{O<:PureCall} <: AbstractCall
 end
 
 # marking as mutable avoids Value Numbering for this instruction
-mutable struct GetIndex{N, A<:Address} <: LinearInstruction
-    array::SSAValue
-    index::NTuple{N, A}
+mutable struct GetIndex{N, A<:Address, B<:Address} <: LinearInstruction
+    array::A
+    index::NTuple{N, B}
 end
 
-GetIndex(array::SSAValue, index::Address...) = GetIndex(array, index)
+GetIndex(array::Address, index::Address...) = GetIndex(array, index)
 
 # marking as mutable avoids Value Numbering for this instruction
 mutable struct SetIndex{N, A1<:Address, A2<:Address} <: LinearInstruction
@@ -68,7 +68,7 @@ mutable struct SetIndex{N, A1<:Address, A2<:Address} <: LinearInstruction
     index::NTuple{N, Address}
 end
 
-SetIndex(array::SSAValue, value::Address, index::Address...) = SetIndex(array, value, index)
+SetIndex(array::Address, value::Address, index::Address...) = SetIndex(array, value, index)
 
 abstract type Program end
 

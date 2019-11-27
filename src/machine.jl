@@ -34,13 +34,13 @@ function execute_op(machine::AbstractMachine, op::Const{T}) :: T where {T}
     return op.val
 end
 
-function execute_op(machine::AbstractMachine, op::InputRef)
+function deref(machine::BasicBlockInterpreter, op::InputRef)
     input_index = indexof(machine.program.inputs, op.symbol)
     return @inbounds machine.input_values[ input_index ]
 end
 
 deref(machine::BasicBlockInterpreter, arg::SSAValue) = machine.memory[arg.index]
-deref(machine::BasicBlockInterpreter, args::SSAValue...) = map(ssa -> deref(machine, ssa), args)
+deref(machine::BasicBlockInterpreter, args::Address...) = map(ssa -> deref(machine, ssa), args)
 
 execute_op(machine::AbstractMachine, op::CallUnary) = op.op(deref(machine, op.arg))
 execute_op(machine::AbstractMachine, op::CallBinary) = op.op(deref(machine, op.arg1), deref(machine, op.arg2))

@@ -120,7 +120,7 @@ compiledfunction(x::Vector) = (((-((10.0 * 2.0 + x[1]) / 1.0) + (x[1] + 10.0 * 2
     arg18 = OIR.addinstruction!(bb, OIR.callpure(*, arg16, arg17))
     OIR.assign!(bb, :output, arg18)
 
-    # println(bb)
+    println(bb)
 
     @testset "BasicBlockInterpreter" begin
         input_vector = [10.0]
@@ -165,7 +165,7 @@ end
     # cannot be optimized to a constant since it depends on the inputs
     @test isa(OIR.instructionof(bb, out), OIR.AbstractCall)
 
-    #println(bb)
+    # println(bb)
 
     input = Dict(:z => 10.0, :y => 20.0, :x => 30.0)
     f = OIR.compile(OIR.BasicBlockInterpreter, bb)

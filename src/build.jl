@@ -6,6 +6,7 @@ function addressof(bb::BasicBlock, slot::Symbol) :: Address
 end
 
 instructionof(bb::BasicBlock, arg::SSAValue) = bb.instructions[arg.index]
+instructionof(bb::BasicBlock, arg::InputRef) = nothing
 lastinstructionaddress(bb::BasicBlock) = SSAValue(lastindex(bb.instructions))
 
 @generated function addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: SSAValue
@@ -53,9 +54,9 @@ function assign!(b::BasicBlock, slot::Symbol, value::SSAValue)
     nothing
 end
 
-function addinput!(b::BasicBlock, sym::Symbol) :: SSAValue
+function addinput!(b::BasicBlock, sym::Symbol) :: Address
     addentry!(b.inputs, sym)
-    return addinstruction!(b, InputRef(sym))
+    return InputRef(sym)
 end
 
 function commute(instruction::CallBinary{F, true}) where {F}
