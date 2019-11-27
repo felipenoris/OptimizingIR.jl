@@ -116,6 +116,7 @@ mutable struct BasicBlock <: Program
     variables::Dict{Variable, StaticAddress}
     branch::Union{Nothing, BranchInstruction}
     next::Union{Nothing, BasicBlock}
+    cfg::Union{Nothing, Program}
 end
 
 struct Goto <: BranchInstruction
@@ -132,7 +133,7 @@ struct GotoIfNot{A<:StaticAddress} <: BranchInstruction
     target::BasicBlock
 end
 
-mutable struct CFG
+mutable struct CFG <: Program
     start::BasicBlock
     globals::Dict{Variable, StaticAddress}
 end

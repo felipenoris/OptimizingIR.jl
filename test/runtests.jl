@@ -344,3 +344,26 @@ end
 @testset "Benchmarks" begin
     include("benchmarks.jl")
 end
+
+function fif(x)
+   y = 0
+   if x > 1
+       y = y + 1
+   end
+   return y * 2
+end
+
+#=
+1 ─      y = 0
+│   %2 = x > 1
+└──      goto #3 if not %2
+2 ─      y = y + 1
+3 ┄ %5 = y * 2
+└──      return %5
+=#
+
+@testset "CFG" begin
+    cfg = OIR.CFG()
+    bb = cfg.start
+    OIR.assign!(bb, OIR.Variable(:y), OIR.constant(0))
+end
