@@ -1,14 +1,12 @@
 
-function addressof(bb::BasicBlock, slot::Symbol) :: SSAValue
+constant(val) = Const(val)
+
+function addressof(bb::BasicBlock, slot::Symbol) :: Address
     return bb.slots[slot]
 end
 
 instructionof(bb::BasicBlock, arg::SSAValue) = bb.instructions[arg.index]
 lastinstructionaddress(bb::BasicBlock) = SSAValue(lastindex(bb.instructions))
-
-function commute(instruction::OpBinary{F, true}) where {F}
-    return op(instruction.op, instruction.arg2, instruction.arg1)
-end
 
 @generated function addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: SSAValue
 
@@ -60,24 +58,32 @@ function addinput!(b::BasicBlock, sym::Symbol) :: SSAValue
     return addinstruction!(b, InputRef(sym))
 end
 
-function iscommutative(::Type{OpBinary{A, commutative}}) where {A, commutative}
+function commute(instruction::CallBinary{F, true}) where {F}
+    return callpure(instruction.op, instruction.arg2, instruction.arg1)
+end
+
+function iscommutative(::Type{CallBinary{F, commutative, A, B}}) where {F, commutative, A, B}
     commutative
 end
 
-iscommutative(op::OpBinary) = iscommutative(typeof(op))
+iscommutative(op::CallBinary) = iscommutative(typeof(op))
 iscommutative(other) = false
 
-@generated function op(f::Function, arg1::SSAValue, arg2::SSAValue)
+@generated function callpure(f::Function, arg1::Address, arg2::Address)
     if f == typeof(+) || f == typeof(*)
         return quote
-            OpBinary(f, arg1, arg2, true)
+            CallBinary(f, arg1, arg2, true)
         end
     else
         return quote
-            OpBinary(f, arg1, arg2, false)
+            CallBinary(f, arg1, arg2, false)
         end
     end
 end
 
-op(f::Function, arg::SSAValue) = OpUnary(f, arg)
-op(f::Function, args::SSAValue...) = OpVararg(f, args)
+callpure(f::Function, arg::Address) = CallUnary(f, arg)
+callpure(f::Function, args::Address...) = CallVararg(f, args)
+
+callimpure(f::Function, arg::Address) = ImpureCall(callpure(f, arg))
+callimpure(f::Function, arg1::Address, arg2::Address) = ImpureCall(callpure(f, arg1, arg2))
+callimpure(f::Function, args::Address...) = ImpureCall(callpure(f, args...))

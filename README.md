@@ -10,4 +10,4 @@
 [codecov-img]: https://img.shields.io/codecov/c/github/felipenoris/OptimizingIR.jl/master.svg?label=codecov&style=flat-square
 [codecov-url]: http://codecov.io/github/felipenoris/OptimizingIR.jl?branch=master
 
-An  Intermediate Representation (IR) on steroids.
+An Intermediate Representation (IR) on steroids.

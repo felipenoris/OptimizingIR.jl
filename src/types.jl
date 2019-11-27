@@ -1,6 +1,9 @@
 
 abstract type Address end
 
+struct NullPointer <: Address
+end
+
 struct SSAValue <: Address
     index::Int # pointer to the instruction the computes the value
 end
@@ -9,81 +12,92 @@ abstract type Instruction end
 abstract type LinearInstruction <: Instruction end
 abstract type BranchInstruction <: Instruction end
 
+"Constant value to be encoded directly into the IR"
 struct Const{T} <: LinearInstruction
     val::T
 end
 
+"""
+External input to the program.
+It is considered a immutable variable.
+"""
 struct InputRef <: LinearInstruction
     symbol::Symbol
 end
 
-struct OpUnary{F<:Function} <: LinearInstruction
-    op::F # op shouldn't have side-effects
-    arg::SSAValue
+abstract type AbstractCall <: LinearInstruction end
+abstract type PureCall <: AbstractCall end
+
+struct CallUnary{F<:Function, A<:Address} <: PureCall
+    op::F
+    arg::A
 end
 
-struct OpBinary{F<:Function, iscommutative} <: LinearInstruction
-    op::F # op shouldn't have side-effects
-    arg1::SSAValue
-    arg2::SSAValue
+struct CallBinary{F<:Function, iscommutative, A<:Address, B<:Address} <: PureCall
+    op::F
+    arg1::A
+    arg2::B
 
-    function OpBinary(op::Function, arg1::SSAValue, arg2::SSAValue, iscommutative::Bool)
-        new{typeof(op), iscommutative}(op, arg1, arg2)
+    function CallBinary(op::Function, arg1::A1, arg2::A2, iscommutative::Bool) where {A1<:Address, A2<:Address}
+        new{typeof(op), iscommutative, A1, A2}(op, arg1, arg2)
     end
 end
 
-struct OpVararg{F<:Function, N} <: LinearInstruction
+struct CallVararg{F<:Function, N} <: PureCall
     op::F
-    args::NTuple{N, SSAValue}
+    args::NTuple{N, Address}
 end
 
-# making OpGetIndex is a hack to avoid
-# Value Numbering this instruction.
-# LookupTable will always fail to find existing
-# instruction.
-# This pairs with OpSetIndex,
-# which has side-effects.
-mutable struct OpGetIndex{N} <: LinearInstruction
+# marking as mutable avoids Value Numbering for this instruction
+mutable struct ImpureCall{O<:PureCall} <: AbstractCall
+    op::O
+end
+
+# marking as mutable avoids Value Numbering for this instruction
+mutable struct GetIndex{N, A<:Address} <: LinearInstruction
     array::SSAValue
-    index::NTuple{N, SSAValue}
+    index::NTuple{N, A}
 end
 
-OpGetIndex(array::SSAValue, index::SSAValue...) = OpGetIndex(array, index)
+GetIndex(array::SSAValue, index::Address...) = GetIndex(array, index)
 
-mutable struct OpSetIndex{N} <: LinearInstruction
-    array::SSAValue
-    value::SSAValue
-    index::NTuple{N, SSAValue}
+# marking as mutable avoids Value Numbering for this instruction
+mutable struct SetIndex{N, A1<:Address, A2<:Address} <: LinearInstruction
+    array::A1
+    value::A2
+    index::NTuple{N, Address}
 end
 
-OpSetIndex(array::SSAValue, value::SSAValue, index::SSAValue...) = OpSetIndex(array, value, index)
+SetIndex(array::SSAValue, value::Address, index::Address...) = SetIndex(array, value, index)
 
-mutable struct BasicBlock
+abstract type Program end
+
+mutable struct BasicBlock <: Program
     instructions::LookupTable{LinearInstruction}
     inputs::LookupTable{Symbol}
-    slots::Dict{Symbol, SSAValue}
+    slots::Dict{Symbol, Address}
     branch::Union{Nothing, BranchInstruction}
     next::Union{Nothing, BasicBlock}
 end
-
-BasicBlock() = BasicBlock(LookupTable{LinearInstruction}(), LookupTable{Symbol}(), Dict{Symbol, SSAValue}(), nothing, nothing)
 
 struct Goto <: BranchInstruction
     target::BasicBlock
 end
 
-struct GotoIf <: BranchInstruction
-    cond::SSAValue
+struct GotoIf{A<:Address} <: BranchInstruction
+    cond::A
     target::BasicBlock
 end
 
-struct GotoIfNot <: BranchInstruction
-    cond::SSAValue
+struct GotoIfNot{A<:Address} <: BranchInstruction
+    cond::A
     target::BasicBlock
 end
 
 mutable struct CFG
     start::BasicBlock
+    globals::Dict{Symbol, Address}
 end
 
-CFG() = CFG(BasicBlock())
+BasicBlock() = BasicBlock(LookupTable{LinearInstruction}(), LookupTable{Symbol}(), Dict{Symbol, Address}(), nothing, nothing)
+CFG() = CFG(BasicBlock(), Dict{Symbol, Address}())
