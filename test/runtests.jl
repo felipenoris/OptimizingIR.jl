@@ -72,9 +72,9 @@ end
 
 @testset "SetIndex" begin
     bb = OIR.BasicBlock()
+    arginput = OIR.addinput!(bb, :x)
     arg1 = OIR.addinstruction!(bb, OIR.constant(Float64))
-    arg2 = OIR.addinstruction!(bb, OIR.constant(3))
-    arg3 = OIR.addinstruction!(bb, OIR.callimpure(zeros, arg1, arg2))
+    arg3 = OIR.addinstruction!(bb, OIR.callimpure(zeros, arg1, arginput))
     OIR.assign!(bb, :vec, arg3)
     arg4 = OIR.addinstruction!(bb, OIR.constant(1))
     arg_inspect = OIR.addinstruction!(bb, OIR.GetIndex(arg3, arg4))
@@ -84,9 +84,9 @@ end
     arg_inspect = OIR.addinstruction!(bb, OIR.GetIndex(arg3, arg4))
     OIR.assign!(bb, :inspect2, arg_inspect)
 
-    # println(bb)
+    println(bb)
 
-    input_vector = []
+    input_vector = [3]
     f = OIR.compile(OIR.BasicBlockInterpreter, bb)
     result = f(input_vector)
     @test result.inspect1 ≈ 0.0
@@ -120,7 +120,7 @@ compiledfunction(x::Vector) = (((-((10.0 * 2.0 + x[1]) / 1.0) + (x[1] + 10.0 * 2
     arg18 = OIR.addinstruction!(bb, OIR.callpure(*, arg16, arg17))
     OIR.assign!(bb, :output, arg18)
 
-    println(bb)
+    # println(bb)
 
     @testset "BasicBlockInterpreter" begin
         input_vector = [10.0]
