@@ -1,3 +1,4 @@
+
 # OptimizingIR.jl
 
 [![License][license-img]](LICENSE)
@@ -10,4 +11,9 @@
 [codecov-img]: https://img.shields.io/codecov/c/github/felipenoris/OptimizingIR.jl/master.svg?label=codecov&style=flat-square
 [codecov-url]: http://codecov.io/github/felipenoris/OptimizingIR.jl?branch=master
 
-An Intermediate Representation (IR) on steroids.
+<blockquote><i>
+"Compilers<br>
+Keep on compilin'<br>
+Cause it won't be too long"<br></i>
+Wonder, S.
+</blockquote>

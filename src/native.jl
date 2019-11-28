@@ -2,6 +2,16 @@
 struct Native <: AbstractMachine
 end
 
+function compile(::Type{Native}, program::Program)
+    f = func(program)
+    input_syms = input_symbols(program)
+
+    return input -> begin
+        input_vector = create_input_vector(input_syms, input)
+        return f(input_vector)
+    end
+end
+
 tmpsym(i::Integer) = Symbol(:t, i)
 
 function build_function_body_expr(ir::Program)
@@ -65,14 +75,5 @@ end
 function func(ir::Program)
     @eval @generated function $(gensym())(x)
         return build_function_body_expr($ir)
-    end
-end
-
-function compile(::Type{Native}, program::Program)
-    f = func(program)
-
-    return input -> begin
-        input_vector = create_input_vector(program, input)
-        return f(input_vector)
     end
 end

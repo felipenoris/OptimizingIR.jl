@@ -17,6 +17,8 @@ Base.iterate(itr::InstructionIterator) = iterate(itr.instructions)
 Base.iterate(itr::InstructionIterator, state) = iterate(itr.instructions, state)
 eachinstruction(bb::BasicBlock) = InstructionIterator(bb.instructions)
 
+hasbranches(bb::BasicBlock) = bb.branch != nothing || bb.next != nothing
+
 @generated function addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: Address
 
     exp_try_commute = quote

@@ -1,18 +1,18 @@
 
-#=
-Benchmarks
-  0.000279 seconds (50 allocations: 2.516 KiB)
-  0.000003 seconds (6 allocations: 304 bytes)
-  0.000004 seconds (6 allocations: 304 bytes)
-Interpreter Overhead = 114.1x
-Native Overhead = 1.1x
-=#
-
 import OptimizingIR
 const OIR = OptimizingIR
 using Test
 
 foreign_fun(a, b, c) = a^3 + b^2 + c
+
+julia_basic_block_test_function(x::Vector) = (((-((10.0 * 2.0 + x[1]) / 1.0) + (x[1] + 10.0 * 2.0) + 1.0) * 1.0 / 2.0) + (0.0 * x[1]) + 1.0) * 1.0
+
+function julia_native_test_function(x::Vector)
+    result = x[1]^3 + x[2]^2 + x[3]
+    out = Dict{Symbol, Any}()
+    out[:result] = result
+    return OptimizingIR.namedtuple(out)
+end
 
 @testset "LookupTable" begin
     table = OIR.LookupTable{Int}()
@@ -134,8 +134,6 @@ end
     @test result.vec == [ 10.0, 0.0, 0.0 ]
 end
 
-compiledfunction(x::Vector) = (((-((10.0 * 2.0 + x[1]) / 1.0) + (x[1] + 10.0 * 2.0) + 1.0) * 1.0 / 2.0) + (0.0 * x[1]) + 1.0) * 1.0
-
 @testset "Basic Block" begin
     bb = OIR.BasicBlock()
     x = OIR.addinput!(bb, :x)
@@ -165,7 +163,7 @@ compiledfunction(x::Vector) = (((-((10.0 * 2.0 + x[1]) / 1.0) + (x[1] + 10.0 * 2
         input_vector = [10.0]
         f = OIR.compile(OIR.BasicBlockInterpreter, bb)
         result = f(input_vector)
-        @test result.output ≈ compiledfunction(input_vector)
+        @test result.output ≈ julia_basic_block_test_function(input_vector)
     end
 
     @testset "Multiply by zero" begin
@@ -216,14 +214,7 @@ end
     end
 end
 
-function compiledfunction(x::Vector)
-    result = x[1]^3 + x[2]^2 + x[3]
-    out = Dict{Symbol, Any}()
-    out[:result] = result
-    return OptimizingIR.namedtuple(out)
-end
-
-@testset "eval" begin
+@testset "Native" begin
     bb = OIR.BasicBlock()
     in1 = OIR.addinput!(bb, :x)
     in2 = OIR.addinput!(bb, :y)
@@ -239,72 +230,12 @@ end
 
     input = [30.0, 20.0, 10.0]
     finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)
-    @test finterpreter(input) == compiledfunction(input)
+    @test finterpreter(input) == julia_native_test_function(input)
 
     f = OIR.compile(OIR.Native, bb)
-    @test f(input) == compiledfunction(input)
-end
-
-function benchmark_julia(x::Vector)
-    v = zeros(Float64, 3)
-    v[1] = x[1]
-    v[2] = x[2]
-
-    result = (((-( v[1] - v[2])) + 1.0 ) * 2.0) / 1.0
-
-    return (v=v, result=result)
+    @test f(input) == julia_native_test_function(input)
 end
 
 @testset "Benchmarks" begin
-
-    bb = OIR.BasicBlock()
-    in1 = OIR.addinput!(bb, :x)
-    in2 = OIR.addinput!(bb, :y)
-
-    argvec = OIR.addinstruction!(bb, OIR.callimpure(zeros, OIR.constant(Float64), OIR.constant(3)))
-
-    OIR.addinstruction!(bb, OIR.SetIndex(argvec, in1, OIR.constant(1)))
-    OIR.addinstruction!(bb, OIR.SetIndex(argvec, in2, OIR.constant(2)))
-
-    OIR.assign!(bb, :v, argvec)
-
-    arg1 = OIR.addinstruction!(bb, OIR.GetIndex(argvec, OIR.constant(1)))
-    arg2 = OIR.addinstruction!(bb, OIR.GetIndex(argvec, OIR.constant(2)))
-
-    # (((-( x[1] - x[2])) + 1.0 ) * 2.0) / 1.0
-    arg3 = OIR.addinstruction!(bb, OIR.callpure(-, arg1, arg2))
-    arg4 = OIR.addinstruction!(bb, OIR.callpure(-, arg3))
-    arg5 = OIR.addinstruction!(bb, OIR.callpure(+, arg4, OIR.constant(1.0)))
-    arg6 = OIR.addinstruction!(bb, OIR.callpure(*, arg5, OIR.constant(2.0)))
-    arg7 = OIR.addinstruction!(bb, OIR.callpure(/, arg6, OIR.constant(1.0)))
-
-    OIR.assign!(bb, :result, arg7)
-
-    fnative = OIR.compile(OIR.Native, bb)
-    finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)
-
-    input = [10.0, 20.0]
-
-    result_native = fnative(input)
-    result_interpreter = finterpreter(input)
-    result_julia = benchmark_julia(input)
-
-    @test result_native.result == result_julia.result
-    @test result_native.v == result_julia.v
-    @test result_interpreter.result == result_julia.result
-    @test result_interpreter.v == result_julia.v
-
-    println()
-    println("Benchmarks")
-    @time finterpreter(input)
-    @time fnative(input)
-    @time benchmark_julia(input)
-    let
-        el_interpreter = @elapsed finterpreter(input)
-        el_native = @elapsed fnative(input)
-        el_julia = @elapsed benchmark_julia(input)
-        println("Interpreter Overhead = $(round(el_interpreter / el_julia, digits=1))x")
-        println("Native Overhead = $(round(el_native / el_julia, digits=1))x")
-    end
-    println()
+    include("benchmarks.jl")
 end

@@ -6,8 +6,8 @@ include("lookup_table.jl")
 include("types.jl")
 include("passes.jl")
 include("build.jl")
-include("machine.jl")
+include("interpreter.jl")
+include("native.jl")
 include("print.jl")
-include("eval.jl")
 
 end # module

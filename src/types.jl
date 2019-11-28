@@ -4,13 +4,17 @@ abstract type Address end
 struct NullPointer <: Address
 end
 
+"""
+A pointer to an instruction
+that computes a value.
+"""
 struct SSAValue <: Address
-    index::Int # pointer to the instruction the computes the value
+    index::Int
 end
 
 """
 External input to the program.
-It is considered a immutable value.
+It is considered an immutable value.
 """
 struct InputRef <: Address
     symbol::Symbol
@@ -101,3 +105,8 @@ end
 
 BasicBlock() = BasicBlock(LookupTable{LinearInstruction}(), LookupTable{Symbol}(), Dict{Symbol, Address}(), nothing, nothing)
 CFG() = CFG(BasicBlock(), Dict{Symbol, Address}())
+
+abstract type AbstractMachine end
+
+"compile(::Type{T}, program::Program) :: Function where {T<:AbstractMachine}"
+function compile end
