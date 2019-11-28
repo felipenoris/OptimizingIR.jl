@@ -12,6 +12,43 @@ using Test
 
 foreign_fun(a, b, c) = a^3 + b^2 + c
 
+@testset "LookupTable" begin
+    table = OIR.LookupTable{Int}()
+    @test isempty(table)
+    @test OIR.addentry!(table, 10) == 1
+    @test !isempty(table)
+    @test OIR.addentry!(table, 20) == 2
+    @test length(table) == 2
+    @test OIR.addentry!(table, 10) == 1
+    @test OIR.addentry!(table, 20) == 2
+    @test length(table) == 2
+    @test 10 ∈ table
+    @test 20 ∈ table
+    @test 1 ∉ table
+    @test lastindex(table) == 2
+    @test OIR.indexof(table, 10) == 1
+    @test OIR.indexof(table, 20) == 2
+    @test table[1] == 10
+    @test table[2] == 20
+
+    for (i, item) in enumerate(table)
+        if i == 1
+            @test item == 10
+        elseif i == 2
+            @test item == 20
+        else
+            @test false
+        end
+    end
+
+    for item in table
+        @test item == 10 || item == 20
+    end
+
+    @test collect(table) == [10, 20]
+    @test filter(i -> i > 10, table) == [20]
+end
+
 @testset "call" begin
     arg1 = OIR.SSAValue(1)
     arg2 = OIR.SSAValue(2)
