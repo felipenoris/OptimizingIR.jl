@@ -7,6 +7,7 @@ end
 
 instructionof(bb::BasicBlock, arg::SSAValue) = bb.instructions[arg.index]
 instructionof(bb::BasicBlock, arg::InputRef) = nothing
+instructionof(bb::BasicBlock, arg::Const) = nothing
 lastinstructionaddress(bb::BasicBlock) = SSAValue(lastindex(bb.instructions))
 
 struct InstructionIterator{T}
