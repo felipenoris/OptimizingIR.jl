@@ -23,13 +23,13 @@ foreign_fun(a, b, c) = a^3 + b^2 + c
 
         bb = OIR.BasicBlock()
         arg1 = OIR.addinput!(bb, :x)
-        arg2 = OIR.addinstruction!(bb, OIR.constant(10.0))
-        arg3 = OIR.addinstruction!(bb, OIR.constant(2.0))
+        arg2 = OIR.constant(10.0)
+        arg3 = OIR.constant(2.0)
         arg4 = OIR.addinstruction!(bb, OIR.callpure(foreign_fun, arg1, arg2, arg3))
 
         arg5 = OIR.addinput!(bb, :x)
-        arg6 = OIR.addinstruction!(bb, OIR.constant(10.0))
-        arg7 = OIR.addinstruction!(bb, OIR.constant(2.0))
+        arg6 = OIR.constant(10.0)
+        arg7 = OIR.constant(2.0)
         arg8 = OIR.addinstruction!(bb, OIR.callpure(foreign_fun, arg5, arg6, arg7))
 
         arg9 = OIR.addinstruction!(bb, OIR.callpure(+, arg4, arg8))
@@ -45,20 +45,20 @@ foreign_fun(a, b, c) = a^3 + b^2 + c
 
     @testset "ImpureCall" begin
         bb = OIR.BasicBlock()
-        arg1 = OIR.addinstruction!(bb, OIR.constant(Float64))
-        arg2 = OIR.addinstruction!(bb, OIR.constant(3))
+        arg1 = OIR.constant(Float64)
+        arg2 = OIR.constant(3)
         arg3 = OIR.addinstruction!(bb, OIR.callimpure(zeros, arg1, arg2))
         arg4 = OIR.addinstruction!(bb, OIR.callimpure(zeros, arg1, arg2))
-        @test length(bb.instructions) == 4
+        @test length(bb.instructions) == 2
     end
 end
 
 @testset "GetIndex" begin
     bb = OIR.BasicBlock()
     arg1 = OIR.addinput!(bb, :x)
-    arg2 = OIR.addinstruction!(bb, OIR.constant(2))
+    arg2 = OIR.constant(2)
     arg3 = OIR.addinstruction!(bb, OIR.GetIndex(arg1, arg2)) # reads x[2]
-    arg4 = OIR.addinstruction!(bb, OIR.constant(5.0))
+    arg4 = OIR.constant(5.0)
     arg5 = OIR.addinstruction!(bb, OIR.callpure(*, arg4, arg3))
     arg6 = OIR.addinstruction!(bb, OIR.GetIndex(arg1, arg2)) # reads x[2]
     arg7 = OIR.addinstruction!(bb, OIR.callpure(*, arg6, arg5))
@@ -73,13 +73,13 @@ end
 @testset "SetIndex" begin
     bb = OIR.BasicBlock()
     arginput = OIR.addinput!(bb, :x)
-    arg1 = OIR.addinstruction!(bb, OIR.constant(Float64))
+    arg1 = OIR.constant(Float64)
     arg3 = OIR.addinstruction!(bb, OIR.callimpure(zeros, arg1, arginput))
     OIR.assign!(bb, :vec, arg3)
-    arg4 = OIR.addinstruction!(bb, OIR.constant(1))
+    arg4 = OIR.constant(1)
     arg_inspect = OIR.addinstruction!(bb, OIR.GetIndex(arg3, arg4))
     OIR.assign!(bb, :inspect1, arg_inspect)
-    arg_input_value = OIR.addinstruction!(bb, OIR.constant(10))
+    arg_input_value = OIR.constant(10)
     arg5 = OIR.addinstruction!(bb, OIR.SetIndex(arg3, arg_input_value, arg4))
     arg_inspect = OIR.addinstruction!(bb, OIR.GetIndex(arg3, arg4))
     OIR.assign!(bb, :inspect2, arg_inspect)
@@ -100,11 +100,11 @@ compiledfunction(x::Vector) = (((-((10.0 * 2.0 + x[1]) / 1.0) + (x[1] + 10.0 * 2
 @testset "Basic Block" begin
     bb = OIR.BasicBlock()
     x = OIR.addinput!(bb, :x)
-    arg1 = OIR.addinstruction!(bb, OIR.constant(10.0))
-    arg2 = OIR.addinstruction!(bb, OIR.constant(2.0))
+    arg1 = OIR.constant(10.0)
+    arg2 = OIR.constant(2.0)
     arg3 = OIR.addinstruction!(bb, OIR.callpure(*, arg1, arg2))
     arg4 = OIR.addinstruction!(bb, OIR.callpure(+, arg3, x))
-    arg5 = OIR.addinstruction!(bb, OIR.constant(1.0))
+    arg5 = OIR.constant(1.0)
     arg6 = OIR.addinstruction!(bb, OIR.callpure(/, arg4, arg5))
     arg7 = OIR.addinstruction!(bb, OIR.callpure(-, arg6))
     arg8 = OIR.addinstruction!(bb, OIR.callpure(+, x, arg3))
@@ -112,10 +112,10 @@ compiledfunction(x::Vector) = (((-((10.0 * 2.0 + x[1]) / 1.0) + (x[1] + 10.0 * 2
     arg10 = OIR.addinstruction!(bb, OIR.callpure(+, arg9, arg5))
     arg11 = OIR.addinstruction!(bb, OIR.callpure(*, arg10, arg5))
     arg12 = OIR.addinstruction!(bb, OIR.callpure(/, arg11, arg2))
-    arg13 = OIR.addinstruction!(bb, OIR.constant(0.0))
+    arg13 = OIR.constant(0.0)
     arg14 = OIR.addinstruction!(bb, OIR.callpure(*, arg13, x))
     arg15 = OIR.addinstruction!(bb, OIR.callpure(+, arg14, arg12))
-    arg16 = OIR.addinstruction!(bb, OIR.constant(1.0))
+    arg16 = OIR.constant(1.0)
     arg17 = OIR.addinstruction!(bb, OIR.callpure(+, arg16, arg15))
     arg18 = OIR.addinstruction!(bb, OIR.callpure(*, arg16, arg17))
     OIR.assign!(bb, :output, arg18)
@@ -144,7 +144,7 @@ compiledfunction(x::Vector) = (((-((10.0 * 2.0 + x[1]) / 1.0) + (x[1] + 10.0 * 2
 
     @testset "Multiply by zero" begin
         last_instruction_ssavalue = OIR.lastinstructionaddress(bb)
-        arg_zero = OIR.addinstruction!(bb, OIR.constant(0.0))
+        arg_zero = OIR.constant(0.0)
         arg_result = OIR.addinstruction!(bb, OIR.callpure(*, last_instruction_ssavalue, arg_zero))
         OIR.assign!(bb, :output, arg_result)
 
@@ -175,12 +175,12 @@ end
 @testset "Passes" begin
     @testset "Constant Propagation" begin
         bb = OIR.BasicBlock()
-        x = OIR.addinstruction!(bb, OIR.constant(30.0))
-        y = OIR.addinstruction!(bb, OIR.constant(20.0))
-        z = OIR.addinstruction!(bb, OIR.constant(10.0))
+        x = OIR.constant(30.0)
+        y = OIR.constant(20.0)
+        z = OIR.constant(10.0)
         out = OIR.addinstruction!(bb, OIR.callpure(foreign_fun, x, y, z))
         OIR.assign!(bb, :result, out)
-        @test isa(OIR.instructionof(bb, out), OIR.Const)
+        @test isa(out, OIR.Const)
 
         # println(bb)
 

@@ -16,14 +16,14 @@ struct InputRef <: Address
     symbol::Symbol
 end
 
+"Constant value to be encoded directly into the IR"
+struct Const{T} <: Address
+    val::T
+end
+
 abstract type Instruction end
 abstract type LinearInstruction <: Instruction end
 abstract type BranchInstruction <: Instruction end
-
-"Constant value to be encoded directly into the IR"
-struct Const{T} <: LinearInstruction
-    val::T
-end
 
 abstract type AbstractCall <: LinearInstruction end
 abstract type PureCall <: AbstractCall end

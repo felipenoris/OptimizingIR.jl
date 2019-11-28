@@ -9,7 +9,7 @@ instructionof(bb::BasicBlock, arg::SSAValue) = bb.instructions[arg.index]
 instructionof(bb::BasicBlock, arg::InputRef) = nothing
 lastinstructionaddress(bb::BasicBlock) = SSAValue(lastindex(bb.instructions))
 
-@generated function addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: SSAValue
+@generated function addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: Address
 
     exp_try_commute = quote
         commuted_instruction = commute(instruction)
@@ -23,7 +23,7 @@ lastinstructionaddress(bb::BasicBlock) = SSAValue(lastindex(bb.instructions))
         let
             result = try_constant_propagation(b, instruction)
             if result.success
-                return addinstruction!(b, result.val)
+                return result.val
             end
         end
 
@@ -49,7 +49,7 @@ lastinstructionaddress(bb::BasicBlock) = SSAValue(lastindex(bb.instructions))
     end
 end
 
-function assign!(b::BasicBlock, slot::Symbol, value::SSAValue)
+function assign!(b::BasicBlock, slot::Symbol, value::Address)
     b.slots[slot] = value
     nothing
 end

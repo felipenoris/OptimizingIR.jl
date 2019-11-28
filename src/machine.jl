@@ -39,8 +39,9 @@ function deref(machine::BasicBlockInterpreter, op::InputRef)
     return @inbounds machine.input_values[ input_index ]
 end
 
+deref(machine::AbstractMachine, arg::Const) = arg.val
 deref(machine::BasicBlockInterpreter, arg::SSAValue) = machine.memory[arg.index]
-deref(machine::BasicBlockInterpreter, args::Address...) = map(ssa -> deref(machine, ssa), args)
+deref(machine::AbstractMachine, args::Address...) = map(ssa -> deref(machine, ssa), args)
 
 execute_op(machine::AbstractMachine, op::CallUnary) = op.op(deref(machine, op.arg))
 execute_op(machine::AbstractMachine, op::CallBinary) = op.op(deref(machine, op.arg1), deref(machine, op.arg2))
