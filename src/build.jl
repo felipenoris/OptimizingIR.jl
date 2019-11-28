@@ -9,6 +9,13 @@ instructionof(bb::BasicBlock, arg::SSAValue) = bb.instructions[arg.index]
 instructionof(bb::BasicBlock, arg::InputRef) = nothing
 lastinstructionaddress(bb::BasicBlock) = SSAValue(lastindex(bb.instructions))
 
+struct InstructionIterator{T}
+    instructions::T
+end
+Base.iterate(itr::InstructionIterator) = iterate(itr.instructions)
+Base.iterate(itr::InstructionIterator, state) = iterate(itr.instructions, state)
+eachinstruction(bb::BasicBlock) = InstructionIterator(bb.instructions)
+
 @generated function addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: Address
 
     exp_try_commute = quote

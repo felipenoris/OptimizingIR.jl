@@ -8,5 +8,6 @@ include("passes.jl")
 include("build.jl")
 include("machine.jl")
 include("print.jl")
+include("eval.jl")
 
 end # module

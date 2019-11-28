@@ -35,9 +35,11 @@ function execute_op(machine::AbstractMachine, op::Const{T}) :: T where {T}
 end
 
 function deref(machine::BasicBlockInterpreter, op::InputRef)
-    input_index = indexof(machine.program.inputs, op.symbol)
-    return @inbounds machine.input_values[ input_index ]
+    return @inbounds machine.input_values[ inputindex(machine.program, op) ]
 end
+
+inputindex(bb::BasicBlock, sym::Symbol) = indexof(bb.inputs, sym)
+inputindex(bb::BasicBlock, op::InputRef) = inputindex(bb, op.symbol)
 
 deref(machine::AbstractMachine, arg::Const) = arg.val
 deref(machine::BasicBlockInterpreter, arg::SSAValue) = machine.memory[arg.index]

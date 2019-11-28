@@ -1,9 +1,11 @@
 
 #=
-Benchmarks for BasicBlockInterpreter
-  0.000031 seconds (33 allocations: 1.594 KiB)
-  0.000002 seconds (5 allocations: 176 bytes)
-Overhead = 12.0x
+Benchmarks
+  0.000279 seconds (50 allocations: 2.516 KiB)
+  0.000003 seconds (6 allocations: 304 bytes)
+  0.000004 seconds (6 allocations: 304 bytes)
+Interpreter Overhead = 114.1x
+Native Overhead = 1.1x
 =#
 
 import OptimizingIR
@@ -164,19 +166,6 @@ compiledfunction(x::Vector) = (((-((10.0 * 2.0 + x[1]) / 1.0) + (x[1] + 10.0 * 2
         f = OIR.compile(OIR.BasicBlockInterpreter, bb)
         result = f(input_vector)
         @test result.output ≈ compiledfunction(input_vector)
-
-        # benchmarks
-        println()
-        println("Benchmarks for BasicBlockInterpreter")
-        @time f(input_vector)
-        @time compiledfunction(input_vector)
-
-        let
-            el_interpreter = @elapsed f(input_vector)
-            el_compiled = @elapsed compiledfunction(input_vector)
-            println("Overhead = $(round(el_interpreter / el_compiled, digits=1))x")
-        end
-        println()
     end
 
     @testset "Multiply by zero" begin
@@ -225,4 +214,97 @@ end
         f = OIR.compile(OIR.BasicBlockInterpreter, bb)
         @test f(input).result ≈ foreign_fun(30.0, 20.0, 10.0)
     end
+end
+
+function compiledfunction(x::Vector)
+    result = x[1]^3 + x[2]^2 + x[3]
+    out = Dict{Symbol, Any}()
+    out[:result] = result
+    return OptimizingIR.namedtuple(out)
+end
+
+@testset "eval" begin
+    bb = OIR.BasicBlock()
+    in1 = OIR.addinput!(bb, :x)
+    in2 = OIR.addinput!(bb, :y)
+    in3 = OIR.addinput!(bb, :z)
+    c3 = OIR.constant(3)
+    c2 = OIR.constant(2)
+    arg1 = OIR.addinstruction!(bb, OIR.callpure(^, in1, c3))
+    arg2 = OIR.addinstruction!(bb, OIR.callpure(^, in2, c2))
+    arg3 = in3
+    s1 = OIR.addinstruction!(bb, OIR.callpure(+, arg1, arg2))
+    s2 = OIR.addinstruction!(bb, OIR.callpure(+, s1, arg3))
+    OIR.assign!(bb, :result, s2)
+
+    input = [30.0, 20.0, 10.0]
+    finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)
+    @test finterpreter(input) == compiledfunction(input)
+
+    f = OIR.compile(OIR.Native, bb)
+    @test f(input) == compiledfunction(input)
+end
+
+function benchmark_julia(x::Vector)
+    v = zeros(Float64, 3)
+    v[1] = x[1]
+    v[2] = x[2]
+
+    result = (((-( v[1] - v[2])) + 1.0 ) * 2.0) / 1.0
+
+    return (v=v, result=result)
+end
+
+@testset "Benchmarks" begin
+
+    bb = OIR.BasicBlock()
+    in1 = OIR.addinput!(bb, :x)
+    in2 = OIR.addinput!(bb, :y)
+
+    argvec = OIR.addinstruction!(bb, OIR.callimpure(zeros, OIR.constant(Float64), OIR.constant(3)))
+
+    OIR.addinstruction!(bb, OIR.SetIndex(argvec, in1, OIR.constant(1)))
+    OIR.addinstruction!(bb, OIR.SetIndex(argvec, in2, OIR.constant(2)))
+
+    OIR.assign!(bb, :v, argvec)
+
+    arg1 = OIR.addinstruction!(bb, OIR.GetIndex(argvec, OIR.constant(1)))
+    arg2 = OIR.addinstruction!(bb, OIR.GetIndex(argvec, OIR.constant(2)))
+
+    # (((-( x[1] - x[2])) + 1.0 ) * 2.0) / 1.0
+    arg3 = OIR.addinstruction!(bb, OIR.callpure(-, arg1, arg2))
+    arg4 = OIR.addinstruction!(bb, OIR.callpure(-, arg3))
+    arg5 = OIR.addinstruction!(bb, OIR.callpure(+, arg4, OIR.constant(1.0)))
+    arg6 = OIR.addinstruction!(bb, OIR.callpure(*, arg5, OIR.constant(2.0)))
+    arg7 = OIR.addinstruction!(bb, OIR.callpure(/, arg6, OIR.constant(1.0)))
+
+    OIR.assign!(bb, :result, arg7)
+
+    fnative = OIR.compile(OIR.Native, bb)
+    finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)
+
+    input = [10.0, 20.0]
+
+    result_native = fnative(input)
+    result_interpreter = finterpreter(input)
+    result_julia = benchmark_julia(input)
+
+    @test result_native.result == result_julia.result
+    @test result_native.v == result_julia.v
+    @test result_interpreter.result == result_julia.result
+    @test result_interpreter.v == result_julia.v
+
+    println()
+    println("Benchmarks")
+    @time finterpreter(input)
+    @time fnative(input)
+    @time benchmark_julia(input)
+    let
+        el_interpreter = @elapsed finterpreter(input)
+        el_native = @elapsed fnative(input)
+        el_julia = @elapsed benchmark_julia(input)
+        println("Interpreter Overhead = $(round(el_interpreter / el_julia, digits=1))x")
+        println("Native Overhead = $(round(el_native / el_julia, digits=1))x")
+    end
+    println()
 end
