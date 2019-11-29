@@ -40,7 +40,7 @@ bb = OIR.BasicBlock()
 in1 = OIR.addinput!(bb, :x)
 in2 = OIR.addinput!(bb, :y)
 
-argvec = OIR.addinstruction!(bb, OIR.callimpure(zeros, OIR.constant(Float64), OIR.constant(3)))
+argvec = OIR.addinstruction!(bb, OIR.call(zeros, OIR.constant(Float64), OIR.constant(3)))
 
 OIR.addinstruction!(bb, OIR.SetIndex(argvec, in1, OIR.constant(1)))
 OIR.addinstruction!(bb, OIR.SetIndex(argvec, in2, OIR.constant(2)))
@@ -51,11 +51,11 @@ arg1 = OIR.addinstruction!(bb, OIR.GetIndex(argvec, OIR.constant(1)))
 arg2 = OIR.addinstruction!(bb, OIR.GetIndex(argvec, OIR.constant(2)))
 
 # (((-( x[1] - x[2])) + 1.0 ) * 2.0) / 1.0
-arg3 = OIR.addinstruction!(bb, OIR.callpure(-, arg1, arg2))
-arg4 = OIR.addinstruction!(bb, OIR.callpure(-, arg3))
-arg5 = OIR.addinstruction!(bb, OIR.callpure(+, arg4, OIR.constant(1.0)))
-arg6 = OIR.addinstruction!(bb, OIR.callpure(*, arg5, OIR.constant(2.0)))
-arg7 = OIR.addinstruction!(bb, OIR.callpure(/, arg6, OIR.constant(1.0)))
+arg3 = OIR.addinstruction!(bb, OIR.call(op_sub, arg1, arg2))
+arg4 = OIR.addinstruction!(bb, OIR.call(op_sub, arg3))
+arg5 = OIR.addinstruction!(bb, OIR.call(op_sum, arg4, OIR.constant(1.0)))
+arg6 = OIR.addinstruction!(bb, OIR.call(op_mul, arg5, OIR.constant(2.0)))
+arg7 = OIR.addinstruction!(bb, OIR.call(op_div, arg6, OIR.constant(1.0)))
 
 OIR.assign!(bb, :result, arg7)
 

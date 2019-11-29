@@ -46,7 +46,7 @@ deref(machine::AbstractMachine, args::Address...) = map(ssa -> deref(machine, ss
 execute_op(machine::AbstractMachine, op::CallUnary) = op.op(deref(machine, op.arg))
 execute_op(machine::AbstractMachine, op::CallBinary) = op.op(deref(machine, op.arg1), deref(machine, op.arg2))
 execute_op(machine::AbstractMachine, op::CallVararg) = op.op(deref(machine, op.args...)...)
-execute_op(machine::AbstractMachine, op::ImpureCall) = execute_op(machine, op.op)
+execute_op(machine::AbstractMachine, op::ImpureCall) = execute_op(machine, op.instruction)
 execute_op(machine::AbstractMachine, op::GetIndex) = getindex(deref(machine, op.array), deref(machine, op.index...)...)
 execute_op(machine::AbstractMachine, op::SetIndex) = setindex!(deref(machine, op.array), deref(machine, op.value), deref(machine, op.index...)...)
 
