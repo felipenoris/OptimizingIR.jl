@@ -55,7 +55,7 @@ end
 
 julia_expr(bb::BasicBlock, constant::Const) = constant.val
 julia_expr(bb::BasicBlock, ssa::SSAValue) = tmpsym(ssa.index)
-julia_expr(bb::BasicBlock, slot::Slot) = julia_expr(bb, bb.slots[slot])
+julia_expr(bb::BasicBlock, slot::Slot) = julia_expr(bb, follow(bb, slot))
 
 function julia_expr(bb::BasicBlock, op::GetIndex)
     Expr(:call,
