@@ -19,8 +19,16 @@ eachinstruction(bb::BasicBlock) = InstructionIterator(bb.instructions)
 
 hasbranches(bb::BasicBlock) = bb.branch != nothing || bb.next != nothing
 
-@generated function addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: Address
+function addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: Address
 
+    result = try_on_add_instruction_passes(b, instruction)
+    if result != nothing
+        return result
+    end
+
+    return SSAValue(addentry!(b.instructions, instruction))
+
+#=
     exp_try_commute = quote
         commuted_instruction = commute(instruction)
         if commuted_instruction ∈ b.instructions
@@ -57,6 +65,7 @@ hasbranches(bb::BasicBlock) = bb.branch != nothing || bb.next != nothing
             $exp_default
         end
     end
+=#
 end
 
 function assign!(b::BasicBlock, slot::Symbol, value::Address)
@@ -69,32 +78,18 @@ function addinput!(b::BasicBlock, sym::Symbol) :: Address
     return InputRef(sym)
 end
 
-function commute(instruction::CallBinary{F, true}) where {F}
-    return callpure(instruction.op, instruction.arg2, instruction.arg1)
-end
+call(op::Op, arg::Address) = wrap_if_impure(CallUnary(op, arg))
+call(op::Op, arg1::Address, arg2::Address) = wrap_if_impure(CallBinary(op, arg1, arg2))
+call(op::Op, args::Address...) = wrap_if_impure(CallVararg(op, args))
 
-function iscommutative(::Type{CallBinary{F, commutative, A, B}}) where {F, commutative, A, B}
-    commutative
-end
-
-iscommutative(op::CallBinary) = iscommutative(typeof(op))
-iscommutative(other) = false
-
-@generated function callpure(f::Function, arg1::Address, arg2::Address)
-    if f == typeof(+) || f == typeof(*)
-        return quote
-            CallBinary(f, arg1, arg2, true)
-        end
+function wrap_if_impure(instruction::PureCall{OP}) where {OP}
+    if ispure(OP)
+        return instruction
     else
-        return quote
-            CallBinary(f, arg1, arg2, false)
-        end
+        return ImpureCall(instruction)
     end
 end
 
-callpure(f::Function, arg::Address) = CallUnary(f, arg)
-callpure(f::Function, args::Address...) = CallVararg(f, args)
-
-callimpure(f::Function, arg::Address) = ImpureCall(callpure(f, arg))
-callimpure(f::Function, arg1::Address, arg2::Address) = ImpureCall(callpure(f, arg1, arg2))
-callimpure(f::Function, args::Address...) = ImpureCall(callpure(f, args...))
+call(f::Function, arg::Address) = call(Op(f), arg)
+call(f::Function, arg1::Address, arg2::Address) = call(Op(f), arg1, arg2)
+call(f::Function, args::Address...) = call(Op(f), args...)

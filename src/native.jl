@@ -47,7 +47,7 @@ function julia_expr(bb::BasicBlock, c::CallVararg)
     Expr(:call, c.op, map( arg -> julia_expr(bb, arg), c.args)...)
 end
 
-julia_expr(bb::BasicBlock, c::ImpureCall) = julia_expr(bb, c.op)
+julia_expr(bb::BasicBlock, c::ImpureCall) = julia_expr(bb, c.instruction)
 
 function julia_expr(bb::BasicBlock, input::InputRef)
     Expr(:call, Base.getindex, :x, inputindex(bb, input))

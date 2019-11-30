@@ -3,6 +3,7 @@
 module OptimizingIR
 
 include("lookup_table.jl")
+include("optrule.jl")
 include("types.jl")
 include("passes.jl")
 include("build.jl")

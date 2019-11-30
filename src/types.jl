@@ -25,36 +25,51 @@ struct Const{T} <: Address
     val::T
 end
 
+struct Op{F<:Function, O}
+    op::F
+
+    function Op(f::F, o::OptimizationRule) where {F<:Function}
+        new{F, o}(f)
+    end
+end
+
+Op(f::Function) = Op(f, optrule())
+
+# defines functor for Op so that op(arg1, ...) will call op.op(arg1, ...)
+# see https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects-1
+(op::Op)(args...) = op.op(args...)
+
 abstract type Instruction end
 abstract type LinearInstruction <: Instruction end
 abstract type BranchInstruction <: Instruction end
 
-abstract type AbstractCall <: LinearInstruction end
-abstract type PureCall <: AbstractCall end
+abstract type AbstractCall{OP<:Op} <: LinearInstruction end
+abstract type PureCall{OP} <: AbstractCall{OP} end
 
-struct CallUnary{F<:Function, A<:Address} <: PureCall
-    op::F
+struct CallUnary{OP, A<:Address} <: PureCall{OP}
+    op::OP
     arg::A
 end
 
-struct CallBinary{F<:Function, iscommutative, A<:Address, B<:Address} <: PureCall
-    op::F
+struct CallBinary{OP, A<:Address, B<:Address} <: PureCall{OP}
+    op::OP
     arg1::A
     arg2::B
-
-    function CallBinary(op::Function, arg1::A1, arg2::A2, iscommutative::Bool) where {A1<:Address, A2<:Address}
-        new{typeof(op), iscommutative, A1, A2}(op, arg1, arg2)
-    end
 end
 
-struct CallVararg{F<:Function, N} <: PureCall
-    op::F
+struct CallVararg{OP, N} <: PureCall{OP}
+    op::OP
     args::NTuple{N, Address}
 end
 
 # marking as mutable avoids Value Numbering for this instruction
-mutable struct ImpureCall{O<:PureCall} <: AbstractCall
-    op::O
+mutable struct ImpureCall{OP, P<:PureCall{OP}} <: AbstractCall{OP}
+    instruction::P
+
+    function ImpureCall(instruction::PureCall{OP}) where {OP}
+        @assert !ispure(OP) "Can't create ImpureCall with a pure OptimizationRule."
+        new{OP, PureCall{OP}}(instruction)
+    end
 end
 
 # marking as mutable avoids Value Numbering for this instruction
