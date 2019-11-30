@@ -41,7 +41,7 @@ inputindex(bb::BasicBlock, op::InputRef) = inputindex(bb, op.symbol)
 
 deref(machine::AbstractMachine, arg::Const) = arg.val
 deref(machine::BasicBlockInterpreter, arg::SSAValue) = machine.memory[arg.index]
-deref(machine::BasicBlockInterpreter, arg::Slot) = deref(machine, follow(machine.program, arg))
+deref(machine::BasicBlockInterpreter, arg::Variable) = deref(machine, follow(machine.program, arg))
 deref(machine::AbstractMachine, args::Address...) = map(ssa -> deref(machine, ssa), args)
 
 execute_op(machine::AbstractMachine, op::CallUnary) = op.op(deref(machine, op.arg))
@@ -51,18 +51,18 @@ execute_op(machine::AbstractMachine, op::ImpureCall) = execute_op(machine, op.in
 execute_op(machine::AbstractMachine, op::GetIndex) = getindex(deref(machine, op.array), deref(machine, op.index...)...)
 execute_op(machine::AbstractMachine, op::SetIndex) = setindex!(deref(machine, op.array), deref(machine, op.value), deref(machine, op.index...)...)
 
-eachslot(machine::BasicBlockInterpreter) = eachslot(machine.program)
+eachvariable(machine::BasicBlockInterpreter) = eachvariable(machine.program)
 
-function derefslots(machine::BasicBlockInterpreter)
+function derefvariables(machine::BasicBlockInterpreter)
     result = Dict{Symbol, Any}()
-    for slot in eachslot(machine)
-        result[slot.symbol] = deref(machine, slot)
+    for variable in eachvariable(machine)
+        result[variable.symbol] = deref(machine, variable)
     end
     return result
 end
 
 namedtuple(d::Dict) = NamedTuple{Tuple(keys(d))}(values(d))
-return_values(machine::BasicBlockInterpreter) = namedtuple(derefslots(machine))
+return_values(machine::BasicBlockInterpreter) = namedtuple(derefvariables(machine))
 
 function create_input_vector(input_symbols::LookupTable{Symbol}, input_values::Dict{Symbol, T}) where {T}
     result = Vector{T}(undef, length(input_symbols))

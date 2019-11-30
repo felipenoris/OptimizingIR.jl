@@ -45,7 +45,7 @@ argvec = OIR.addinstruction!(bb, OIR.call(zeros, OIR.constant(Float64), OIR.cons
 OIR.addinstruction!(bb, OIR.SetIndex(argvec, in1, OIR.constant(1)))
 OIR.addinstruction!(bb, OIR.SetIndex(argvec, in2, OIR.constant(2)))
 
-OIR.assign!(bb, OIR.Slot(:v), argvec)
+OIR.assign!(bb, OIR.Variable(:v), argvec)
 
 arg1 = OIR.addinstruction!(bb, OIR.GetIndex(argvec, OIR.constant(1)))
 arg2 = OIR.addinstruction!(bb, OIR.GetIndex(argvec, OIR.constant(2)))
@@ -57,7 +57,7 @@ arg5 = OIR.addinstruction!(bb, OIR.call(op_sum, arg4, OIR.constant(1.0)))
 arg6 = OIR.addinstruction!(bb, OIR.call(op_mul, arg5, OIR.constant(2.0)))
 arg7 = OIR.addinstruction!(bb, OIR.call(op_div, arg6, OIR.constant(1.0)))
 
-OIR.assign!(bb, OIR.Slot(:result), arg7)
+OIR.assign!(bb, OIR.Variable(:result), arg7)
 
 println()
 @info("Benchmarks")

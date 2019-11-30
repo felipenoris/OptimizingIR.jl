@@ -1,6 +1,18 @@
 
+
+ispure(rule::OptimizationRule) = rule.pure
+iscommutative(rule::OptimizationRule) = rule.commutative
+hasleftidentity(rule::OptimizationRule) = rule.hasleftidentity
+hasrightidentity(rule::OptimizationRule) = rule.hasrightidentity
+hasidentity(rule::OptimizationRule) = hasrightidentity(rule) || hasleftidentity(rule)
+
+function get_identity_element(rule::OptimizationRule)
+    @assert hasidentity(rule)
+    return rule.identity_element
+end
+
 #
-# define optrule.jl methods for Op and AbstractCall
+# define OpimizationRule methods for Op and AbstractCall
 #
 
 for fun in (:ispure, :iscommutative, :hasidentity, :hasleftidentity, :hasrightidentity, :get_identity_element)

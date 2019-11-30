@@ -1,17 +1,31 @@
 
 constant(val) = Const(val)
-eachslot(bb::BasicBlock) = keys(bb.slots)
+eachvariable(bb::BasicBlock) = keys(bb.variables)
 hasbranches(bb::BasicBlock) = bb.branch != nothing || bb.next != nothing
+
+function Op(f::F;
+            pure::Bool=false,
+            commutative::Bool=false,
+            hasleftidentity::Bool=false,
+            hasrightidentity::Bool=false,
+            identity_element::T=nothing) where {F<:Function, T}
+
+    return Op(f, OptimizationRule(pure, commutative, hasleftidentity, hasrightidentity, identity_element))
+end
+
+# defines functor for Op so that op(arg1, ...) will call op.op(arg1, ...)
+# see https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects-1
+(op::Op)(args...) = op.op(args...)
 
 """
     follow(program::Program, arg::Address) :: StaticAddress
 
 Similar to deref, but returns the static address
-for which the slot is pointing to.
+for which the argument is pointing to.
 """
-function follow(program::BasicBlock, arg::Slot) :: StaticAddress
-    @assert haskey(program.slots, arg) "Slot $arg was not defined."
-    return program.slots[arg]
+function follow(program::BasicBlock, arg::Variable) :: StaticAddress
+    @assert haskey(program.variables, arg) "Variable $arg was not defined."
+    return program.variables[arg]
 end
 
 follow(bb::BasicBlock, arg::SSAValue) = bb.instructions[arg.index]
@@ -33,8 +47,8 @@ function addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: Stati
     return SSAValue(addentry!(b.instructions, instruction))
 end
 
-function assign!(b::BasicBlock, slot::Slot, value::StaticAddress)
-    b.slots[slot] = value
+function assign!(b::BasicBlock, variable::Variable, value::StaticAddress)
+    b.variables[variable] = value
     nothing
 end
 

@@ -28,8 +28,26 @@ struct Const{T} <: StaticAddress
 end
 
 "A mutable output value"
-struct Slot <: MutableAddress
+struct Variable <: MutableAddress
     symbol::Symbol
+end
+
+struct OptimizationRule{T}
+    pure::Bool
+    commutative::Bool
+    hasleftidentity::Bool   # [left=element] op       right
+    hasrightidentity::Bool  #     left       op  [right=element]
+    identity_element::T
+
+    function OptimizationRule(pure::Bool, commutative::Bool,
+            hasleftidentity::Bool, hasrightidentity::Bool, identity_element::T) where {T}
+
+        if commutative || hasleftidentity || hasrightidentity
+            @assert pure "Can't apply commutative or identity optimization on impure op."
+        end
+
+        new{T}(pure, commutative, hasleftidentity, hasrightidentity, identity_element)
+    end
 end
 
 struct Op{F<:Function, O}
@@ -39,12 +57,6 @@ struct Op{F<:Function, O}
         new{F, o}(f)
     end
 end
-
-Op(f::Function) = Op(f, optrule())
-
-# defines functor for Op so that op(arg1, ...) will call op.op(arg1, ...)
-# see https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects-1
-(op::Op)(args...) = op.op(args...)
 
 abstract type Instruction end
 abstract type LinearInstruction <: Instruction end
@@ -101,7 +113,7 @@ abstract type Program end
 mutable struct BasicBlock <: Program
     instructions::LookupTable{LinearInstruction}
     inputs::LookupTable{Symbol}
-    slots::Dict{Slot, StaticAddress}
+    variables::Dict{Variable, StaticAddress}
     branch::Union{Nothing, BranchInstruction}
     next::Union{Nothing, BasicBlock}
 end

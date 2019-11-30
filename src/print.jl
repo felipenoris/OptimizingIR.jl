@@ -20,18 +20,19 @@ function Base.show(io::IO, b::BasicBlock)
     end
     sep()
     println(io, "")
-    println(io, "Slots")
+    println(io, "Variables")
     sep()
-    for (sym, value) in b.slots
+    for (sym, value) in b.variables
         println(io, "$sym | $value")
     end
     sep()
 end
 
 function Base.show(io::IO, c::Const{T}) where {T}
-    print(io, "$(c.val) :: $T")
+    print(io, "$(c.val)::$T")
 end
 
+Base.show(io::IO, v::Variable) = print(io, "$(v.symbol)")
 Base.show(io::IO, ssa::SSAValue) = print(io, "%$(ssa.index)")
 Base.show(io::IO, input::InputRef) = print(io, input.symbol)
 Base.show(io::IO, instruction::GetIndex) = print(io, "GetIndex($(instruction.array), $(instruction.index))")
