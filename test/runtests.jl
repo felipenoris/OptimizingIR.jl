@@ -85,8 +85,11 @@ end
         # println(bb)
 
         input = 20.0
-        f = OIR.compile(OIR.BasicBlockInterpreter, bb)
-        @test f([input]).output ≈ 2 * (input^3 + 10^2 + 2)
+        finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)
+        @test finterpreter([input]).output ≈ 2 * (input^3 + 10^2 + 2)
+
+        fnative = OIR.compile(OIR.Native, bb)
+        @test fnative([input]).output ≈ 2 * (input^3 + 10^2 + 2)
     end
 
     @testset "ImpureCall" begin
@@ -113,8 +116,11 @@ end
 
     # println(bb)
 
-    f = OIR.compile(OIR.BasicBlockInterpreter, bb)
-    @test f([[5.0, 6.0, 7.0]]).output ≈ 6.0 * 5.0 * 6.0
+    finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)
+    @test finterpreter([[5.0, 6.0, 7.0]]).output ≈ 6.0 * 5.0 * 6.0
+
+    fnative = OIR.compile(OIR.Native, bb)
+    @test fnative([[5.0, 6.0, 7.0]]).output ≈ 6.0 * 5.0 * 6.0
 end
 
 @testset "SetIndex" begin
@@ -144,14 +150,28 @@ end
     println(bb)
 
     input_vector = [3]
-    f = OIR.compile(OIR.BasicBlockInterpreter, bb)
-    result = f(input_vector)
-    @test result.inspect1 ≈ 0.0
-    @test result.inspect2 ≈ 10.0
-    @test isa(result.inspect2, Float64)
-    @test result.inspect3 ≈ 20.0
-    @test result.inspect4 ≈ 20.0
-    @test result.vec == [ 10.0, 0.0, 0.0 ]
+
+    let
+        finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)
+        result = finterpreter(input_vector)
+        @test result.inspect1 ≈ 0.0
+        @test result.inspect2 ≈ 10.0
+        @test isa(result.inspect2, Float64)
+        @test result.inspect3 ≈ 20.0
+        @test result.inspect4 ≈ 20.0
+        @test result.vec == [ 10.0, 0.0, 0.0 ]
+    end
+
+    let
+        fnative = OIR.compile(OIR.Native, bb)
+        result = fnative(input_vector)
+        @test result.inspect1 ≈ 0.0
+        @test result.inspect2 ≈ 10.0
+        @test isa(result.inspect2, Float64)
+        @test result.inspect3 ≈ 20.0
+        @test result.inspect4 ≈ 20.0
+        @test result.vec == [ 10.0, 0.0, 0.0 ]
+    end
 end
 
 @testset "Basic Block" begin
@@ -180,9 +200,16 @@ end
 
     # println(bb)
 
-    @testset "BasicBlockInterpreter" begin
+    let
         input_vector = [10.0]
         f = OIR.compile(OIR.BasicBlockInterpreter, bb)
+        result = f(input_vector)
+        @test result.output ≈ julia_basic_block_test_function(input_vector)
+    end
+
+    let
+        input_vector = [10.0]
+        f = OIR.compile(OIR.Native, bb)
         result = f(input_vector)
         @test result.output ≈ julia_basic_block_test_function(input_vector)
     end
@@ -193,9 +220,17 @@ end
         arg_result = OIR.addinstruction!(bb, OIR.call(op_mul, last_instruction_ssavalue, arg_zero))
         OIR.assign!(bb, OIR.Slot(:output), arg_result)
 
-        input_vector = [10.0]
-        f = OIR.compile(OIR.BasicBlockInterpreter, bb)
-        @test f(input_vector).output == 0.0
+        let
+            input_vector = [10.0]
+            f = OIR.compile(OIR.BasicBlockInterpreter, bb)
+            @test f(input_vector).output == 0.0
+        end
+
+        let
+            input_vector = [10.0]
+            f = OIR.compile(OIR.Native, bb)
+            @test f(input_vector).output == 0.0
+        end
     end
 end
 
@@ -214,8 +249,16 @@ end
     # println(bb)
 
     input = Dict(:z => 10.0, :y => 20.0, :x => 30.0)
-    f = OIR.compile(OIR.BasicBlockInterpreter, bb)
-    @test f(input).result ≈ foreign_fun(30.0, 20.0, 10.0)
+
+    let
+        f = OIR.compile(OIR.BasicBlockInterpreter, bb)
+        @test f(input).result ≈ foreign_fun(30.0, 20.0, 10.0)
+    end
+
+    let
+        f = OIR.compile(OIR.Native, bb)
+        @test f(input).result ≈ foreign_fun(30.0, 20.0, 10.0)
+    end
 end
 
 @testset "Passes" begin
@@ -231,8 +274,16 @@ end
         # println(bb)
 
         input = []
-        f = OIR.compile(OIR.BasicBlockInterpreter, bb)
-        @test f(input).result ≈ foreign_fun(30.0, 20.0, 10.0)
+
+        let
+            f = OIR.compile(OIR.BasicBlockInterpreter, bb)
+            @test f(input).result ≈ foreign_fun(30.0, 20.0, 10.0)
+        end
+
+        let
+            f = OIR.compile(OIR.Native, bb)
+            @test f(input).result ≈ foreign_fun(30.0, 20.0, 10.0)
+        end
     end
 end
 
@@ -251,13 +302,18 @@ end
     # println(bb)
 
     input = [10.0]
-    f = OIR.compile(OIR.BasicBlockInterpreter, bb)
-    @test f(input).slot == 11.0
-    @test f(input).output == 1.0 + 10.0 + 10.0
 
-    fc = OIR.compile(OIR.Native, bb)
-    @test fc(input).slot == 11.0
-    @test fc(input).output == 1.0 + 10.0 + 10.0
+    let
+        f = OIR.compile(OIR.BasicBlockInterpreter, bb)
+        @test f(input).slot == 11.0
+        @test f(input).output == 1.0 + 10.0 + 10.0
+    end
+
+    let
+        fc = OIR.compile(OIR.Native, bb)
+        @test fc(input).slot == 11.0
+        @test fc(input).output == 1.0 + 10.0 + 10.0
+    end
 end
 
 @testset "Native" begin
@@ -275,11 +331,16 @@ end
     OIR.assign!(bb, OIR.Slot(:result), s2)
 
     input = [30.0, 20.0, 10.0]
-    finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)
-    @test finterpreter(input) == julia_native_test_function(input)
 
-    f = OIR.compile(OIR.Native, bb)
-    @test f(input) == julia_native_test_function(input)
+    let
+        finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)
+        @test finterpreter(input) == julia_native_test_function(input)
+    end
+
+    let
+        f = OIR.compile(OIR.Native, bb)
+        @test f(input) == julia_native_test_function(input)
+    end
 end
 
 @testset "Benchmarks" begin
