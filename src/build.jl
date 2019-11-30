@@ -1,10 +1,20 @@
 
 constant(val) = Const(val)
+eachslot(bb::BasicBlock) = keys(bb.slots)
+hasbranches(bb::BasicBlock) = bb.branch != nothing || bb.next != nothing
 
-instructionof(bb::BasicBlock, arg::SSAValue) = bb.instructions[arg.index]
-instructionof(bb::BasicBlock, arg::InputRef) = nothing
-instructionof(bb::BasicBlock, arg::Const) = nothing
-lastinstructionaddress(bb::BasicBlock) = SSAValue(lastindex(bb.instructions))
+"""
+    follow(program::Program, arg::Address) :: StaticAddress
+
+Similar to deref, but returns the static address
+for which the slot is pointing to.
+"""
+function follow(program::BasicBlock, arg::Slot) :: StaticAddress
+    @assert haskey(program.slots, arg) "Slot $arg was not defined."
+    return program.slots[arg]
+end
+
+follow(bb::BasicBlock, arg::SSAValue) = bb.instructions[arg.index]
 
 struct InstructionIterator{T}
     instructions::T
@@ -12,9 +22,6 @@ end
 Base.iterate(itr::InstructionIterator) = iterate(itr.instructions)
 Base.iterate(itr::InstructionIterator, state) = iterate(itr.instructions, state)
 eachinstruction(bb::BasicBlock) = InstructionIterator(bb.instructions)
-eachslot(bb::BasicBlock) = keys(bb.slots)
-
-hasbranches(bb::BasicBlock) = bb.branch != nothing || bb.next != nothing
 
 function addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: StaticAddress
 
@@ -34,17 +41,6 @@ end
 function addinput!(b::BasicBlock, sym::Symbol) :: StaticAddress
     addentry!(b.inputs, sym)
     return InputRef(sym)
-end
-
-"""
-    follow(program::BasicBlock, arg::Slot) :: StaticAddress
-
-Similar to deref, but returns the static address
-for which the slot is pointing to.
-"""
-function follow(program::BasicBlock, arg::Slot) :: StaticAddress
-    @assert haskey(program.slots, arg) "Slot $arg was not defined."
-    return program.slots[arg]
 end
 
 call(op::Op, arg::StaticAddress) = wrap_if_impure(CallUnary(op, arg))
