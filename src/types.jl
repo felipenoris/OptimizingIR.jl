@@ -1,14 +1,16 @@
 
 abstract type Address end
+abstract type StaticAddress <: Address end
+abstract type MutableAddress <: Address end
 
-struct NullPointer <: Address
+struct NullPointer <: StaticAddress
 end
 
 """
 A pointer to an instruction
 that computes a value.
 """
-struct SSAValue <: Address
+struct SSAValue <: StaticAddress
     index::Int
 end
 
@@ -16,13 +18,18 @@ end
 External input to the program.
 It is considered an immutable value.
 """
-struct InputRef <: Address
+struct InputRef <: StaticAddress
     symbol::Symbol
 end
 
 "Constant value to be encoded directly into the IR"
-struct Const{T} <: Address
+struct Const{T} <: StaticAddress
     val::T
+end
+
+"A mutable output value"
+struct Slot <: MutableAddress
+    symbol::Symbol
 end
 
 struct Op{F<:Function, O}
@@ -46,12 +53,12 @@ abstract type BranchInstruction <: Instruction end
 abstract type AbstractCall{OP<:Op} <: LinearInstruction end
 abstract type PureCall{OP} <: AbstractCall{OP} end
 
-struct CallUnary{OP, A<:Address} <: PureCall{OP}
+struct CallUnary{OP, A<:StaticAddress} <: PureCall{OP}
     op::OP
     arg::A
 end
 
-struct CallBinary{OP, A<:Address, B<:Address} <: PureCall{OP}
+struct CallBinary{OP, A<:StaticAddress, B<:StaticAddress} <: PureCall{OP}
     op::OP
     arg1::A
     arg2::B
@@ -59,7 +66,7 @@ end
 
 struct CallVararg{OP, N} <: PureCall{OP}
     op::OP
-    args::NTuple{N, Address}
+    args::NTuple{N, StaticAddress}
 end
 
 # marking as mutable avoids Value Numbering for this instruction
@@ -73,28 +80,28 @@ mutable struct ImpureCall{OP, P<:PureCall{OP}} <: AbstractCall{OP}
 end
 
 # marking as mutable avoids Value Numbering for this instruction
-mutable struct GetIndex{N, A<:Address, B<:Address} <: LinearInstruction
+mutable struct GetIndex{N, A<:StaticAddress, B<:StaticAddress} <: LinearInstruction
     array::A
     index::NTuple{N, B}
 end
 
-GetIndex(array::Address, index::Address...) = GetIndex(array, index)
+GetIndex(array::StaticAddress, index::StaticAddress...) = GetIndex(array, index)
 
 # marking as mutable avoids Value Numbering for this instruction
-mutable struct SetIndex{N, A1<:Address, A2<:Address} <: LinearInstruction
+mutable struct SetIndex{N, A1<:StaticAddress, A2<:StaticAddress} <: LinearInstruction
     array::A1
     value::A2
-    index::NTuple{N, Address}
+    index::NTuple{N, StaticAddress}
 end
 
-SetIndex(array::Address, value::Address, index::Address...) = SetIndex(array, value, index)
+SetIndex(array::StaticAddress, value::StaticAddress, index::StaticAddress...) = SetIndex(array, value, index)
 
 abstract type Program end
 
 mutable struct BasicBlock <: Program
     instructions::LookupTable{LinearInstruction}
     inputs::LookupTable{Symbol}
-    slots::Dict{Symbol, Address}
+    slots::Dict{Slot, StaticAddress}
     branch::Union{Nothing, BranchInstruction}
     next::Union{Nothing, BasicBlock}
 end
@@ -103,23 +110,23 @@ struct Goto <: BranchInstruction
     target::BasicBlock
 end
 
-struct GotoIf{A<:Address} <: BranchInstruction
+struct GotoIf{A<:StaticAddress} <: BranchInstruction
     cond::A
     target::BasicBlock
 end
 
-struct GotoIfNot{A<:Address} <: BranchInstruction
+struct GotoIfNot{A<:StaticAddress} <: BranchInstruction
     cond::A
     target::BasicBlock
 end
 
 mutable struct CFG
     start::BasicBlock
-    globals::Dict{Symbol, Address}
+    globals::Dict{Symbol, StaticAddress}
 end
 
 BasicBlock() = BasicBlock(LookupTable{LinearInstruction}(), LookupTable{Symbol}(), Dict{Symbol, Address}(), nothing, nothing)
-CFG() = CFG(BasicBlock(), Dict{Symbol, Address}())
+CFG() = CFG(BasicBlock(), Dict{Symbol, StaticAddress}())
 
 abstract type AbstractMachine end
 

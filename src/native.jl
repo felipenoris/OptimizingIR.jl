@@ -31,7 +31,7 @@ function return_expr(bb::BasicBlock)
     ret_expr = Expr(:tuple)
 
     for (k, v) in bb.slots
-        push!(ret_expr.args, Expr(:(=), k, julia_expr(bb, v)))
+        push!(ret_expr.args, Expr(:(=), k.symbol, julia_expr(bb, v)))
     end
 
     return ret_expr
@@ -55,6 +55,7 @@ end
 
 julia_expr(bb::BasicBlock, constant::Const) = constant.val
 julia_expr(bb::BasicBlock, ssa::SSAValue) = tmpsym(ssa.index)
+julia_expr(bb::BasicBlock, slot::Slot) = julia_expr(bb, bb.slots[slot])
 
 function julia_expr(bb::BasicBlock, op::GetIndex)
     Expr(:call,

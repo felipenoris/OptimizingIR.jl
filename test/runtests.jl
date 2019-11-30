@@ -81,7 +81,7 @@ end
 
         arg9 = OIR.addinstruction!(bb, OIR.call(op_sum, arg4, arg8))
 
-        OIR.assign!(bb, :output, arg9)
+        OIR.assign!(bb, OIR.Slot(:output), arg9)
 
         @test length(bb.instructions) == 2
         # println(bb)
@@ -110,7 +110,7 @@ end
     arg5 = OIR.addinstruction!(bb, OIR.call(op_mul, arg4, arg3))
     arg6 = OIR.addinstruction!(bb, OIR.GetIndex(arg1, arg2)) # reads x[2]
     arg7 = OIR.addinstruction!(bb, OIR.call(op_mul, arg6, arg5))
-    OIR.assign!(bb, :output, arg7)
+    OIR.assign!(bb, OIR.Slot(:output), arg7)
 
     @test length(bb.instructions) == 4
     # println(bb)
@@ -124,23 +124,23 @@ end
     arginput = OIR.addinput!(bb, :x)
     arg1 = OIR.constant(Float64)
     arg3 = OIR.addinstruction!(bb, OIR.call(zeros, arg1, arginput))
-    OIR.assign!(bb, :vec, arg3)
+    OIR.assign!(bb, OIR.Slot(:vec), arg3)
     arg4 = OIR.constant(1)
     arg_inspect = OIR.addinstruction!(bb, OIR.GetIndex(arg3, arg4))
-    OIR.assign!(bb, :inspect1, arg_inspect)
+    OIR.assign!(bb, OIR.Slot(:inspect1), arg_inspect)
     arg_input_value = OIR.constant(10)
     arg5 = OIR.addinstruction!(bb, OIR.SetIndex(arg3, arg_input_value, arg4))
     arg_inspect = OIR.addinstruction!(bb, OIR.GetIndex(arg3, arg4))
-    OIR.assign!(bb, :inspect2, arg_inspect)
+    OIR.assign!(bb, OIR.Slot(:inspect2), arg_inspect)
     arg6 = OIR.addinstruction!(bb, OIR.call(op_mul, OIR.constant(2.0), arg_inspect))
-    OIR.assign!(bb, :inspect3, arg6)
+    OIR.assign!(bb, OIR.Slot(:inspect3), arg6)
     arg7 = OIR.addinstruction!(bb, OIR.call(op_mul, OIR.constant(1.0), arg6))
     arg8 = OIR.addinstruction!(bb, OIR.call(op_mul, arg7, OIR.constant(1.0)))
     arg9 = OIR.addinstruction!(bb, OIR.call(op_sum, arg8, OIR.constant(0.0)))
     arg10 = OIR.addinstruction!(bb, OIR.call(op_sum, OIR.constant(0.0), arg9))
     arg11 = OIR.addinstruction!(bb, OIR.call(op_sub, arg10, OIR.constant(0.0)))
     arg12 = OIR.addinstruction!(bb, OIR.call(op_div, arg11, OIR.constant(1.0)))
-    OIR.assign!(bb, :inspect4, arg12)
+    OIR.assign!(bb, OIR.Slot(:inspect4), arg12)
 
     @test length(bb.instructions) == 5
     println(bb)
@@ -177,7 +177,7 @@ end
     arg16 = OIR.constant(1.0)
     arg17 = OIR.addinstruction!(bb, OIR.call(op_sum, arg16, arg15))
     arg18 = OIR.addinstruction!(bb, OIR.call(op_mul, arg16, arg17))
-    OIR.assign!(bb, :output, arg18)
+    OIR.assign!(bb, OIR.Slot(:output), arg18)
 
     @test length(bb.instructions) == 8
     # println(bb)
@@ -193,7 +193,7 @@ end
         last_instruction_ssavalue = OIR.lastinstructionaddress(bb)
         arg_zero = OIR.constant(0.0)
         arg_result = OIR.addinstruction!(bb, OIR.call(op_mul, last_instruction_ssavalue, arg_zero))
-        OIR.assign!(bb, :output, arg_result)
+        OIR.assign!(bb, OIR.Slot(:output), arg_result)
 
         input_vector = [10.0]
         f = OIR.compile(OIR.BasicBlockInterpreter, bb)
@@ -207,7 +207,7 @@ end
     y = OIR.addinput!(bb, :y)
     z = OIR.addinput!(bb, :z)
     out = OIR.addinstruction!(bb, OIR.call(op_foreign_fun, x, y, z))
-    OIR.assign!(bb, :result, out)
+    OIR.assign!(bb, OIR.Slot(:result), out)
 
     # cannot be optimized to a constant since it depends on the inputs
     @test isa(OIR.instructionof(bb, out), OIR.AbstractCall)
@@ -227,7 +227,7 @@ end
         y = OIR.constant(20.0)
         z = OIR.constant(10.0)
         out = OIR.addinstruction!(bb, OIR.call(op_foreign_fun, x, y, z))
-        OIR.assign!(bb, :result, out)
+        OIR.assign!(bb, OIR.Slot(:result), out)
         @test isa(out, OIR.Const)
 
         # println(bb)
@@ -236,6 +236,30 @@ end
         f = OIR.compile(OIR.BasicBlockInterpreter, bb)
         @test f(input).result ≈ foreign_fun(30.0, 20.0, 10.0)
     end
+end
+
+@testset "Slots" begin
+    bb = OIR.BasicBlock()
+    x = OIR.addinput!(bb, :x)
+    z = OIR.constant(1.0)
+    slot = OIR.Slot(:slot)
+    OIR.assign!(bb, slot, z)
+    out = OIR.addinstruction!(bb, OIR.call(op_sum, OIR.follow(bb, slot), x))
+    OIR.assign!(bb, slot, out)
+    out = OIR.addinstruction!(bb, OIR.call(op_sum, OIR.follow(bb, slot), x))
+    OIR.assign!(bb, OIR.Slot(:output), out)
+
+    @test length(bb.instructions) == 2
+    # println(bb)
+
+    input = [10.0]
+    f = OIR.compile(OIR.BasicBlockInterpreter, bb)
+    @test f(input).slot == 11.0
+    @test f(input).output == 1.0 + 10.0 + 10.0
+
+    fc = OIR.compile(OIR.Native, bb)
+    @test fc(input).slot == 11.0
+    @test fc(input).output == 1.0 + 10.0 + 10.0
 end
 
 @testset "Native" begin
@@ -250,7 +274,7 @@ end
     arg3 = in3
     s1 = OIR.addinstruction!(bb, OIR.call(op_sum, arg1, arg2))
     s2 = OIR.addinstruction!(bb, OIR.call(op_sum, s1, arg3))
-    OIR.assign!(bb, :result, s2)
+    OIR.assign!(bb, OIR.Slot(:result), s2)
 
     input = [30.0, 20.0, 10.0]
     finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)

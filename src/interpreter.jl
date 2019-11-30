@@ -41,6 +41,7 @@ inputindex(bb::BasicBlock, op::InputRef) = inputindex(bb, op.symbol)
 
 deref(machine::AbstractMachine, arg::Const) = arg.val
 deref(machine::BasicBlockInterpreter, arg::SSAValue) = machine.memory[arg.index]
+deref(machine::BasicBlockInterpreter, arg::Slot) = deref(machine, follow(machine.program, arg))
 deref(machine::AbstractMachine, args::Address...) = map(ssa -> deref(machine, ssa), args)
 
 execute_op(machine::AbstractMachine, op::CallUnary) = op.op(deref(machine, op.arg))
@@ -50,12 +51,12 @@ execute_op(machine::AbstractMachine, op::ImpureCall) = execute_op(machine, op.in
 execute_op(machine::AbstractMachine, op::GetIndex) = getindex(deref(machine, op.array), deref(machine, op.index...)...)
 execute_op(machine::AbstractMachine, op::SetIndex) = setindex!(deref(machine, op.array), deref(machine, op.value), deref(machine, op.index...)...)
 
-readslot(machine::BasicBlockInterpreter, slotname::Symbol) = deref(machine, addressof(machine.program, slotname))
+eachslot(machine::BasicBlockInterpreter) = eachslot(machine.program)
 
 function derefslots(machine::BasicBlockInterpreter)
     result = Dict{Symbol, Any}()
-    for (k, v) in machine.program.slots
-        result[k] = deref(machine, v)
+    for slot in eachslot(machine)
+        result[slot.symbol] = deref(machine, slot)
     end
     return result
 end
