@@ -1,13 +1,19 @@
 
-
 ispure(rule::OptimizationRule) = rule.pure
 iscommutative(rule::OptimizationRule) = rule.commutative
-hasleftidentity(rule::OptimizationRule) = rule.hasleftidentity
-hasrightidentity(rule::OptimizationRule) = rule.hasrightidentity
-hasidentity(rule::OptimizationRule) = hasrightidentity(rule) || hasleftidentity(rule)
+hasleftidentityproperty(rule::OptimizationRule) = rule.hasleftidentity
+hasrightidentityproperty(rule::OptimizationRule) = rule.hasrightidentity
+hasidentityproperty(rule::OptimizationRule) = hasrightidentityproperty(rule) || hasleftidentityproperty(rule)
+
+struct NullIdentityElement
+end
+
+const NULL_IDENTITY_ELEMENT = NullIdentityElement()
+
+hasidentityelement(rule::OptimizationRule) = rule.identity_element != NULL_IDENTITY_ELEMENT
 
 function get_identity_element(rule::OptimizationRule)
-    @assert hasidentity(rule)
+    @assert hasidentityproperty(rule) && hasidentityelement(rule)
     return rule.identity_element
 end
 
@@ -15,7 +21,7 @@ end
 # define OpimizationRule methods for Op and AbstractCall
 #
 
-for fun in (:ispure, :iscommutative, :hasidentity, :hasleftidentity, :hasrightidentity, :get_identity_element)
+for fun in (:ispure, :iscommutative, :hasidentityproperty, :hasleftidentityproperty, :hasrightidentityproperty, :get_identity_element, :hasidentityelement)
     @eval begin
         function ($fun)(::Type{Op{F, OPTRULE}}) where {F, OPTRULE}
             ($fun)(OPTRULE)
@@ -92,17 +98,17 @@ is_const_with_value(c::Const, val) = c.val == val
 
 function try_identity_element_pass(b::BasicBlock, instruction::CallBinary{OP}) where {OP}
 
-    if hasidentity(OP)
+    if hasidentityproperty(OP)
 
         identity_element = get_identity_element(OP)
 
-        if hasrightidentity(OP)
+        if hasrightidentityproperty(OP)
             if is_const_with_value(instruction.arg2, identity_element)
                 return OptimizationPassResult(true, instruction.arg1)
             end
         end
 
-        if hasleftidentity(OP)
+        if hasleftidentityproperty(OP)
             if is_const_with_value(instruction.arg1, identity_element)
                 return OptimizationPassResult(true, instruction.arg2)
             end
@@ -143,7 +149,7 @@ function addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: Addre
         return result
     end
 
-    ...
+    # (...)
 end
 ```
 """
@@ -156,21 +162,13 @@ function try_on_add_instruction_passes(bb::BasicBlock, instruction::PureCall{OP}
     @assert ispure(OP) "Beloved?"
 
     # all pure ops go thru constant propagation
-    result = try_constant_propagation(bb, instruction)
-    if result.success
-        return result.val
-    end
-
     # next we check for identity element
-    result = try_identity_element_pass(bb, instruction)
-    if result.success
-        return result.val
-    end
-
     # last optim is for commutative op
-    result = try_commutative_op(bb, instruction)
-    if result.success
-        return result.val
+    for fn in (try_constant_propagation, try_identity_element_pass, try_commutative_op)
+        result = fn(bb, instruction)
+        if result.success
+            return result.val
+        end
     end
 
     return nothing

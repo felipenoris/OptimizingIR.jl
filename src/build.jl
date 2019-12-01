@@ -8,7 +8,7 @@ function Op(f::F;
             commutative::Bool=false,
             hasleftidentity::Bool=false,
             hasrightidentity::Bool=false,
-            identity_element::T=nothing) where {F<:Function, T}
+            identity_element::T=NULL_IDENTITY_ELEMENT) where {F<:Function, T}
 
     return Op(f, OptimizationRule(pure, commutative, hasleftidentity, hasrightidentity, identity_element))
 end
