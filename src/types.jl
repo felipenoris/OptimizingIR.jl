@@ -35,8 +35,8 @@ end
 struct OptimizationRule{T}
     pure::Bool
     commutative::Bool
-    hasleftidentity::Bool   # [left=element] op       right
-    hasrightidentity::Bool  #     left       op  [right=element]
+    hasleftidentity::Bool   # [left=element] op      right
+    hasrightidentity::Bool  #     left       op [right=element]
     identity_element::T
 
     function OptimizationRule(pure::Bool, commutative::Bool,

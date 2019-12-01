@@ -54,7 +54,7 @@ end
 # Constant Propagation
 #
 
-struct OptimizationPassResult{A<:Address}
+struct OptimizationPassResult{A<:StaticAddress}
     success::Bool
     val::A
 end
