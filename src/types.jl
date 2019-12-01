@@ -134,11 +134,8 @@ end
 
 mutable struct CFG
     start::BasicBlock
-    globals::Dict{Symbol, StaticAddress}
+    globals::Dict{Variable, StaticAddress}
 end
-
-BasicBlock() = BasicBlock(LookupTable{LinearInstruction}(), LookupTable{Symbol}(), Dict{Symbol, Address}(), nothing, nothing)
-CFG() = CFG(BasicBlock(), Dict{Symbol, StaticAddress}())
 
 abstract type AbstractMachine end
 
