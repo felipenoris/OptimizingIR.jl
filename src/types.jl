@@ -27,7 +27,7 @@ struct Const{T} <: StaticAddress
     val::T
 end
 
-"A mutable output value"
+"A mutable output value. See [`OptimizingIR.assign!`](@ref)."
 struct Variable <: MutableAddress
     symbol::Symbol
 end
