@@ -12,9 +12,16 @@ function compile(::Type{Native}, program::Program)
     end
 end
 
+# Based on Mike's IRTools.jl
+function func(ir::Program)
+    @eval @generated function $(gensym())(x)
+        return build_function_body_expr($ir)
+    end
+end
+
 tmpsym(i::Integer) = Symbol(:t, i)
 
-function build_function_body_expr(ir::Program)
+function build_function_body_expr(ir::BasicBlock)
     block = Expr(:block)
 
     itr = eachinstruction(ir)
@@ -70,11 +77,4 @@ function julia_expr(bb::BasicBlock, op::SetIndex)
         julia_expr(bb, op.array),
         julia_expr(bb, op.value),
         map(i -> julia_expr(bb, i), op.index)...)
-end
-
-# Based on Mike's IRTools.jl
-function func(ir::Program)
-    @eval @generated function $(gensym())(x)
-        return build_function_body_expr($ir)
-    end
 end
