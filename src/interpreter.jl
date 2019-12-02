@@ -32,12 +32,9 @@ function execute_op(machine::AbstractMachine, op::Const{T}) :: T where {T}
     return op.val
 end
 
-function deref(machine::BasicBlockInterpreter, op::InputRef)
+function deref(machine::BasicBlockInterpreter, op::InputValue)
     return @inbounds machine.input_values[ inputindex(machine.program, op) ]
 end
-
-inputindex(bb::BasicBlock, sym::Symbol) = indexof(bb.inputs, sym)
-inputindex(bb::BasicBlock, op::InputRef) = inputindex(bb, op.symbol)
 
 deref(machine::AbstractMachine, arg::Const) = arg.val
 deref(machine::BasicBlockInterpreter, arg::SSAValue) = machine.memory[arg.index]
@@ -64,7 +61,7 @@ end
 namedtuple(d::Dict) = NamedTuple{Tuple(keys(d))}(values(d))
 return_values(machine::BasicBlockInterpreter) = namedtuple(derefvariables(machine))
 
-function create_input_vector(input_symbols::LookupTable{Symbol}, input_values::Dict{Symbol, T}) where {T}
+function create_input_vector(input_symbols::LookupTable{InputValue}, input_values::Dict{InputValue, T}) where {T}
     result = Vector{T}(undef, length(input_symbols))
     for (i, sym) in enumerate(input_symbols)
         @inbounds result[i] = input_values[sym]
@@ -72,7 +69,7 @@ function create_input_vector(input_symbols::LookupTable{Symbol}, input_values::D
     return result
 end
 
-function create_input_vector(input_symbols::LookupTable{Symbol}, input_values::Vector)
+function create_input_vector(input_symbols::LookupTable{InputValue}, input_values::Vector)
     @assert length(input_symbols) == length(input_values)
     return input_values
 end

@@ -56,7 +56,7 @@ end
 
 julia_expr(bb::BasicBlock, c::ImpureCall) = julia_expr(bb, c.instruction)
 
-function julia_expr(bb::BasicBlock, input::InputRef)
+function julia_expr(bb::BasicBlock, input::InputValue)
     Expr(:call, Base.getindex, :x, inputindex(bb, input))
 end
 

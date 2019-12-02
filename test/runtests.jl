@@ -67,12 +67,12 @@ end
     @testset "CallVararg" begin
 
         bb = OIR.BasicBlock()
-        arg1 = OIR.addinput!(bb, :x)
+        arg1 = OIR.addinput!(bb, OIR.InputValue(:x))
         arg2 = OIR.constant(10.0)
         arg3 = OIR.constant(2.0)
         arg4 = OIR.addinstruction!(bb, OIR.call(op_foreign_fun, arg1, arg2, arg3))
 
-        arg5 = OIR.addinput!(bb, :x)
+        arg5 = OIR.addinput!(bb, OIR.InputValue(:x))
         arg6 = OIR.constant(10.0)
         arg7 = OIR.constant(2.0)
         arg8 = OIR.addinstruction!(bb, OIR.call(op_foreign_fun, arg5, arg6, arg7))
@@ -102,7 +102,7 @@ end
 
 @testset "GetIndex" begin
     bb = OIR.BasicBlock()
-    arg1 = OIR.addinput!(bb, :x)
+    arg1 = OIR.addinput!(bb, OIR.InputValue(:x))
     arg2 = OIR.constant(2)
     arg3 = OIR.addinstruction!(bb, OIR.GetIndex(arg1, arg2)) # reads x[2]
     arg4 = OIR.constant(5.0)
@@ -123,7 +123,7 @@ end
 
 @testset "SetIndex" begin
     bb = OIR.BasicBlock()
-    arginput = OIR.addinput!(bb, :x)
+    arginput = OIR.addinput!(bb, OIR.InputValue(:x))
     arg1 = OIR.constant(Float64)
     arg3 = OIR.addinstruction!(bb, OIR.call(zeros, arg1, arginput))
     OIR.assign!(bb, OIR.Variable(:vec), arg3)
@@ -174,7 +174,7 @@ end
 
 @testset "Basic Block" begin
     bb = OIR.BasicBlock()
-    x = OIR.addinput!(bb, :x)
+    x = OIR.addinput!(bb, OIR.InputValue(:x))
     arg1 = OIR.constant(10.0)
     arg2 = OIR.constant(2.0)
     arg3 = OIR.addinstruction!(bb, OIR.call(op_mul, arg1, arg2))
@@ -234,9 +234,9 @@ end
 
 @testset "Inputs" begin
     bb = OIR.BasicBlock()
-    x = OIR.addinput!(bb, :x)
-    y = OIR.addinput!(bb, :y)
-    z = OIR.addinput!(bb, :z)
+    x = OIR.addinput!(bb, OIR.InputValue(:x))
+    y = OIR.addinput!(bb, OIR.InputValue(:y))
+    z = OIR.addinput!(bb, OIR.InputValue(:z))
     out = OIR.addinstruction!(bb, OIR.call(op_foreign_fun, x, y, z))
     OIR.assign!(bb, OIR.Variable(:result), out)
 
@@ -246,7 +246,7 @@ end
 
     # println(bb)
 
-    input = Dict(:z => 10.0, :y => 20.0, :x => 30.0)
+    input = Dict(OIR.InputValue(:z) => 10.0, OIR.InputValue(:y) => 20.0, OIR.InputValue(:x) => 30.0)
 
     let
         f = OIR.compile(OIR.BasicBlockInterpreter, bb)
@@ -285,9 +285,9 @@ end
     end
 end
 
-@testset "Slots" begin
+@testset "Variables" begin
     bb = OIR.BasicBlock()
-    x = OIR.addinput!(bb, :x)
+    x = OIR.addinput!(bb, OIR.InputValue(:x))
     z = OIR.constant(1.0)
     slot = OIR.Variable(:slot)
     OIR.assign!(bb, slot, z)
@@ -316,9 +316,9 @@ end
 
 @testset "Native" begin
     bb = OIR.BasicBlock()
-    in1 = OIR.addinput!(bb, :x)
-    in2 = OIR.addinput!(bb, :y)
-    in3 = OIR.addinput!(bb, :z)
+    in1 = OIR.addinput!(bb, OIR.InputValue(:x))
+    in2 = OIR.addinput!(bb, OIR.InputValue(:y))
+    in3 = OIR.addinput!(bb, OIR.InputValue(:z))
     c3 = OIR.constant(3)
     c2 = OIR.constant(2)
     arg1 = OIR.addinstruction!(bb, OIR.call(op_pow, in1, c3))
@@ -339,10 +339,6 @@ end
         f = OIR.compile(OIR.Native, bb)
         @test f(input) == julia_native_test_function(input)
     end
-end
-
-@testset "Benchmarks" begin
-    include("benchmarks.jl")
 end
 
 function fif(x)
@@ -366,4 +362,8 @@ end
     cfg = OIR.CFG()
     bb = cfg.start
     OIR.assign!(bb, OIR.Variable(:y), OIR.constant(0))
+end
+
+@testset "Benchmarks" begin
+    include("benchmarks.jl")
 end

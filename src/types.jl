@@ -18,7 +18,7 @@ end
 External input to the program.
 It is considered an immutable value.
 """
-struct InputRef <: StaticAddress
+struct InputValue <: StaticAddress
     symbol::Symbol
 end
 
@@ -112,7 +112,7 @@ abstract type Program end
 
 mutable struct BasicBlock <: Program
     instructions::LookupTable{LinearInstruction}
-    inputs::LookupTable{Symbol}
+    inputs::LookupTable{InputValue}
     variables::Dict{Variable, StaticAddress}
     branch::Union{Nothing, BranchInstruction}
     next::Union{Nothing, BasicBlock}

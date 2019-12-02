@@ -37,8 +37,8 @@ function benchmark_julia(x::Vector)
 end
 
 bb = OIR.BasicBlock()
-in1 = OIR.addinput!(bb, :x)
-in2 = OIR.addinput!(bb, :y)
+in1 = OIR.addinput!(bb, OIR.InputValue(:x))
+in2 = OIR.addinput!(bb, OIR.InputValue(:y))
 
 argvec = OIR.addinstruction!(bb, OIR.call(zeros, OIR.constant(Float64), OIR.constant(3)))
 

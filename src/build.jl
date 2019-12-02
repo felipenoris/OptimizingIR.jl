@@ -1,5 +1,5 @@
 
-BasicBlock() = BasicBlock(LookupTable{LinearInstruction}(), LookupTable{Symbol}(), Dict{Variable, StaticAddress}(), nothing, nothing, nothing)
+BasicBlock() = BasicBlock(LookupTable{LinearInstruction}(), LookupTable{InputValue}(), Dict{Variable, StaticAddress}(), nothing, nothing, nothing)
 
 function CFG()
     cfg = CFG(BasicBlock(), Dict{Variable, StaticAddress}())
@@ -60,9 +60,11 @@ function assign!(b::BasicBlock, variable::Variable, value::StaticAddress)
     nothing
 end
 
-function addinput!(b::BasicBlock, sym::Symbol) :: StaticAddress
-    addentry!(b.inputs, sym)
-    return InputRef(sym)
+inputindex(bb::BasicBlock, op::InputValue) = indexof(bb.inputs, op)
+
+function addinput!(b::BasicBlock, iv::InputValue) :: StaticAddress
+    addentry!(b.inputs, iv)
+    return iv
 end
 
 call(op::Op, arg::StaticAddress) = wrap_if_impure(CallUnary(op, arg))
