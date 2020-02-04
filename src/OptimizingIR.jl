@@ -2,6 +2,7 @@
 "An  Intermediate Representation (IR) on steroids."
 module OptimizingIR
 
+include("graph.jl")
 include("lookup_table.jl")
 include("types.jl")
 include("passes.jl")

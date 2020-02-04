@@ -3,6 +3,11 @@ import OptimizingIR
 const OIR = OptimizingIR
 using Test
 
+@testset "Graph" begin
+    include("test_graph.jl")
+end
+
+#=
 foreign_fun(a, b, c) = a^3 + b^2 + c
 julia_basic_block_test_function(x::Vector) = (((-((10.0 * 2.0 + x[1]) / 1.0) + (x[1] + 10.0 * 2.0) + 1.0) * 1.0 / 2.0) + (0.0 * x[1]) + 1.0) * 1.0
 
@@ -367,3 +372,4 @@ end
 @testset "Benchmarks" begin
     include("benchmarks.jl")
 end
+=#
