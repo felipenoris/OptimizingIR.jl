@@ -356,7 +356,7 @@ function dominance_frontiers(g::AbstractGraph)
             for pred_vertex_index in each_adjacent_vertex_index(g, vertex_index, false)
                 runner = pred_vertex_index
                 while runner != idoms[vertex_index]
-                    result[runner] = ∪(result[runner], Set(vertex_index))
+                    push!(result[runner], vertex_index)
                     runner = idoms[runner]
                 end
             end
