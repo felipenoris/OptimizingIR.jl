@@ -247,13 +247,15 @@ function reachable(g::AbstractGraph{T}, source_vertex, fwd::Bool) where {T}
     result = Set{T}()
 
     for bfs_vertex in bfs(g, source_vertex, fwd)
-        if bfs_vertex.color != :white
+        if is_reachable(bfs_vertex)
             push!(result, get_vertex_from_index(g, bfs_vertex.index))
         end
     end
 
     return result
 end
+
+is_reachable(v::BFSVertex) = v.color != :white
 
 #
 # Dominance
@@ -318,7 +320,7 @@ function nearest_reachable_vertex_from_set(g::AbstractGraph, vertex_index::Integ
     distance_to_vertex = Dict{Int, Int}()
     for vertex in set
         bfs_vertex = bfs_vertices[vertex]
-        @assert bfs_vertex.color != :white "vertex $vertex is not reachable."
+        @assert is_reachable(bfs_vertex) "vertex $vertex is not reachable."
         distance_to_vertex[bfs_vertex.distance] = vertex
     end
 
