@@ -5,7 +5,7 @@ struct BasicBlockInterpreter{T} <: AbstractMachine
     input_values::Vector{T}
 
     function BasicBlockInterpreter(b::BasicBlock, input_values::Vector{T}) where {T}
-        @assert !hasbranches(b) "BasicBlockInterpreter does not support branches"
+        #@assert !hasbranches(b) "BasicBlockInterpreter does not support branches"
         @assert length(input_values) == length(b.inputs) "Expected `input_values` with $(length(b.inputs)) elements. Got $(length(input_values))."
         return new{T}(b, Vector{Any}(undef, required_memory_size(b)), input_values)
     end

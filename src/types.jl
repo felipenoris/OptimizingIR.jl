@@ -114,9 +114,9 @@ mutable struct BasicBlock <: Program
     instructions::LookupTable{LinearInstruction}
     inputs::LookupTable{InputValue}
     variables::Dict{Variable, StaticAddress}
-    branch::Union{Nothing, BranchInstruction}
-    next::Union{Nothing, BasicBlock}
-    cfg::Union{Nothing, Program}
+#    branch::Union{Nothing, BranchInstruction}
+#    next::Union{Nothing, BasicBlock}
+#    cfg::Union{Nothing, Program}
 end
 
 struct Goto <: BranchInstruction
@@ -133,10 +133,10 @@ struct GotoIfNot{A<:StaticAddress} <: BranchInstruction
     target::BasicBlock
 end
 
-mutable struct CFG <: Program
-    start::BasicBlock
-    globals::Dict{Variable, StaticAddress}
-end
+#mutable struct CFG <: Program
+#    start::BasicBlock
+#    globals::Dict{Variable, StaticAddress}
+#end
 
 abstract type AbstractMachine end
 

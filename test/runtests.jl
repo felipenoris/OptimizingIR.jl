@@ -345,6 +345,7 @@ end
     end
 end
 
+#=
 function fif(x)
    y = 0
    if x > 1
@@ -367,6 +368,7 @@ end
     bb = cfg.start
     OIR.assign!(bb, OIR.Variable(:y), OIR.constant(0))
 end
+=#
 
 @testset "Benchmarks" begin
     include("benchmarks.jl")

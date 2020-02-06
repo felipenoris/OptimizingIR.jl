@@ -1,15 +1,23 @@
 
-BasicBlock() = BasicBlock(LookupTable{LinearInstruction}(), LookupTable{InputValue}(), Dict{Variable, StaticAddress}(), nothing, nothing, nothing)
+function BasicBlock()
+    BasicBlock(
+        LookupTable{LinearInstruction}(),
+        LookupTable{InputValue}(),
+        Dict{Variable, StaticAddress}()
+    )
+end
 
+#=
 function CFG()
     cfg = CFG(BasicBlock(), Dict{Variable, StaticAddress}())
     cfg.start.cfg = cfg
     cfg
 end
+=#
 
 constant(val) = Const(val)
 eachvariable(bb::BasicBlock) = keys(bb.variables)
-hasbranches(bb::BasicBlock) = bb.branch != nothing || bb.next != nothing
+#hasbranches(bb::BasicBlock) = bb.branch != nothing || bb.next != nothing
 
 function Op(f::F;
             pure::Bool=false,
