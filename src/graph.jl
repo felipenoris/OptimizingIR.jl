@@ -197,23 +197,23 @@ predecessors(g::AbstractGraph, from_vertex) = Set(each_predecessor(g, from_verte
 # BFS
 #
 
-mutable struct BFSVertex
-    index::Int
+mutable struct BFSVertexInfo
     color::Symbol
     distance::Int
-    π::Union{Nothing, Int} # predecessor vertex index
+    pred::Union{Nothing, Int} # predecessor vertex index
 end
 
-function bfs(g::AbstractGraph{T}, source_vertex_index::Integer, fwd::Bool) where {T}
+"Breadth-First Search"
+function bfs(g::AbstractGraph, source_vertex_index::Integer, fwd::Bool) :: Vector{BFSVertexInfo}
     vertices_count = nv(g)
 
     # setup
-    bfs_vertices = Vector{BFSVertex}(undef, vertices_count)
+    bfs_vertices = Vector{BFSVertexInfo}(undef, vertices_count)
     for i in 1:vertices_count
         if i == source_vertex_index
-            bfs_vertices[i] = BFSVertex(i, :gray, 0, nothing)
+            bfs_vertices[i] = BFSVertexInfo(:gray, 0, nothing)
         else
-            bfs_vertices[i] = BFSVertex(i, :white, typemax(Int), nothing)
+            bfs_vertices[i] = BFSVertexInfo(:white, typemax(Int), nothing)
         end
     end
     queue = Vector{Int}()
@@ -228,7 +228,7 @@ function bfs(g::AbstractGraph{T}, source_vertex_index::Integer, fwd::Bool) where
             if bfs_vertex.color == :white
                 bfs_vertex.color = :gray
                 bfs_vertex.distance = bfs_vertices[vertex_index].distance + 1
-                bfs_vertex.π = vertex_index
+                bfs_vertex.pred = vertex_index
                 push!(queue, adjacent_vertex_index)
             end
             bfs_vertices[vertex_index].color = :black
@@ -243,19 +243,19 @@ function bfs(g::AbstractGraph{T}, source_vertex::T, fwd::Bool) where {T}
 end
 
 "Returns the Set of Vertices that are reachable from `source_vertex`."
-function reachable(g::AbstractGraph{T}, source_vertex, fwd::Bool) where {T}
+function reachable_vertices(g::AbstractGraph{T}, source_vertex, fwd::Bool) where {T}
     result = Set{T}()
 
-    for bfs_vertex in bfs(g, source_vertex, fwd)
+    for (vertex_index, bfs_vertex) in enumerate(bfs(g, source_vertex, fwd))
         if is_reachable(bfs_vertex)
-            push!(result, get_vertex_from_index(g, bfs_vertex.index))
+            push!(result, get_vertex_from_index(g, vertex_index))
         end
     end
 
     return result
 end
 
-is_reachable(v::BFSVertex) = v.color != :white
+is_reachable(v::BFSVertexInfo) = v.color != :white
 
 #
 # Dominance

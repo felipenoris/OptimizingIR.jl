@@ -96,9 +96,9 @@ end
     @test OptimizingIR.Graphs.predecessors_count(cfg, VX(7)) == 2
 
     # BFS
-    @test OptimizingIR.Graphs.reachable(cfg, VX(4), true) == Set([ VX(4) ])
-    @test OptimizingIR.Graphs.reachable(cfg, VX(3), true) == Set([ VX(1), VX(2), VX(3), VX(4), VX(5), VX(6), VX(7), VX(8) ])
-    @test OptimizingIR.Graphs.reachable(cfg, VX(1), false) == Set([ VX(0), VX(1), VX(2), VX(3), VX(5), VX(6), VX(7), VX(8) ])
+    @test OptimizingIR.Graphs.reachable_vertices(cfg, VX(4), true) == Set([ VX(4) ])
+    @test OptimizingIR.Graphs.reachable_vertices(cfg, VX(3), true) == Set([ VX(1), VX(2), VX(3), VX(4), VX(5), VX(6), VX(7), VX(8) ])
+    @test OptimizingIR.Graphs.reachable_vertices(cfg, VX(1), false) == Set([ VX(0), VX(1), VX(2), VX(3), VX(5), VX(6), VX(7), VX(8) ])
 
     # dominance
     @test OptimizingIR.Graphs.dominator_sets(cfg) == [Set([1]), Set([2, 1]), Set([2, 3, 1]), Set([4, 2, 1]), Set([4, 2, 5, 1]), Set([2, 6, 1]), Set([7, 2, 6, 1]), Set([2, 8, 6, 1]), Set([9, 2, 6, 1])]

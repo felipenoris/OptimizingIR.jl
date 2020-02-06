@@ -71,12 +71,10 @@ call(op::Op, arg::StaticAddress) = wrap_if_impure(CallUnary(op, arg))
 call(op::Op, arg1::StaticAddress, arg2::StaticAddress) = wrap_if_impure(CallBinary(op, arg1, arg2))
 call(op::Op, args::StaticAddress...) = wrap_if_impure(CallVararg(op, args))
 
-function wrap_if_impure(instruction::PureCall{OP}) where {OP}
-    if ispure(OP)
-        return instruction
-    else
-        return ImpureCall(instruction)
-    end
+@generated function wrap_if_impure(instruction::PureCall{OP}) where {OP}
+
+    ispure(OP) ? :instruction : :(ImpureCall(instruction))
+
 end
 
 call(f::Function, arg::StaticAddress) = call(Op(f), arg)
