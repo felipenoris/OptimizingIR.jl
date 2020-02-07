@@ -62,8 +62,8 @@ const op_foreign_fun = OIR.Op(foreign_fun, pure=true)
 end
 
 @testset "OptimizationRule" begin
-    @test OIR.ispure(op_sum)
-    @test !OIR.ispure(OIR.Op(zeros))
+    @test OIR.is_pure(op_sum)
+    @test !OIR.is_pure(OIR.Op(zeros))
 end
 
 @testset "call" begin

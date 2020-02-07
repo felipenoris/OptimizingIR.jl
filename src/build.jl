@@ -81,7 +81,7 @@ call(op::Op, args::StaticAddress...) = wrap_if_impure(CallVararg(op, args))
 
 @generated function wrap_if_impure(instruction::PureCall{OP}) where {OP}
 
-    ispure(OP) ? :instruction : :(ImpureCall(instruction))
+    is_pure(OP) ? :instruction : :(ImpureCall(instruction))
 
 end
 

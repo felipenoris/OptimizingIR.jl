@@ -86,7 +86,7 @@ mutable struct ImpureCall{OP, P<:PureCall{OP}} <: AbstractCall{OP}
     instruction::P
 
     function ImpureCall(instruction::PureCall{OP}) where {OP}
-        @assert !ispure(OP) "Can't create ImpureCall with a pure OptimizationRule."
+        @assert !is_pure(OP) "Can't create ImpureCall with a pure OptimizationRule."
         new{OP, PureCall{OP}}(instruction)
     end
 end
