@@ -1,29 +1,30 @@
 
 #=
+MBP
 [ Info: Benchmarks
 Compile Native:
-  0.001271 seconds (338 allocations: 22.762 KiB)
+  0.000618 seconds (338 allocations: 22.758 KiB)
 Compile BasicBlockInterpreter
-  0.000007 seconds (6 allocations: 224 bytes)
-Compilation Overhead: Native / BasicBlockInterpreter: 227.2x
+  0.000002 seconds (6 allocations: 224 bytes)
+Compilation Overhead: Native / BasicBlockInterpreter: 459.8x
 F Call Native 1st
-  0.047859 seconds (40.42 k allocations: 2.236 MiB)
+  0.026858 seconds (40.42 k allocations: 2.236 MiB)
 F Call Native 2nd
-  0.000007 seconds (6 allocations: 304 bytes)
+  0.000003 seconds (6 allocations: 304 bytes)
 F Call Interpreter 1st
-  0.073893 seconds (49.33 k allocations: 2.688 MiB)
+  0.056011 seconds (48.91 k allocations: 2.670 MiB)
 F Call Interpreter 2nd
-  0.000122 seconds (50 allocations: 2.516 KiB)
+  0.000065 seconds (50 allocations: 2.516 KiB)
 F Call Julia 1st
-  0.021313 seconds (14.47 k allocations: 823.737 KiB, 34.51% gc time)
+  0.008278 seconds (14.47 k allocations: 823.737 KiB)
 F Call Julia 2nd
   0.000004 seconds (6 allocations: 304 bytes)
-F Call Overhead: BasicBlockInterpreter / julia = 39.7x
-F Call Overhead: Native / julia = 1.6x
+F Call Overhead: BasicBlockInterpreter / julia = 43.9x
+F Call Overhead: Native / julia = 2.2x
 [ Info: Compilation + F Call
-BasicBlockInterpreter: 128.5µs
-Native: 1210.6µs
-Native / BasicBlockInterpreter = 9.4x
+BasicBlockInterpreter: 53.2µs
+Native: 552.9µs
+Native / BasicBlockInterpreter = 10.4x
 =#
 
 function benchmark_julia(x::Vector)
@@ -37,8 +38,8 @@ function benchmark_julia(x::Vector)
 end
 
 bb = OIR.BasicBlock()
-in1 = OIR.addinput!(bb, OIR.InputValue(:x))
-in2 = OIR.addinput!(bb, OIR.InputValue(:y))
+in1 = OIR.addinput!(bb, OIR.InputVariable(:x))
+in2 = OIR.addinput!(bb, OIR.InputVariable(:y))
 
 argvec = OIR.addinstruction!(bb, OIR.call(zeros, OIR.constant(Float64), OIR.constant(3)))
 

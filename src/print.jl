@@ -34,7 +34,7 @@ end
 
 Base.show(io::IO, v::Variable) = print(io, "$(v.symbol)")
 Base.show(io::IO, ssa::SSAValue) = print(io, "%$(ssa.index)")
-Base.show(io::IO, input::InputValue) = print(io, input.symbol)
+Base.show(io::IO, input::InputVariable) = print(io, input.symbol)
 Base.show(io::IO, instruction::GetIndex) = print(io, "GetIndex($(instruction.array), $(instruction.index))")
 Base.show(io::IO, instruction::SetIndex) = print(io, "SetIndex($(instruction.array), $(instruction.value), $(instruction.index))")
 Base.show(io::IO, call::CallBinary) = print(io, "call($(call.op), $(call.arg1), $(call.arg2))")

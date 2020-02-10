@@ -71,12 +71,12 @@ end
     @testset "CallVararg" begin
 
         bb = OIR.BasicBlock()
-        arg1 = OIR.addinput!(bb, OIR.InputValue(:x))
+        arg1 = OIR.addinput!(bb, OIR.InputVariable(:x))
         arg2 = OIR.constant(10.0)
         arg3 = OIR.constant(2.0)
         arg4 = OIR.addinstruction!(bb, OIR.call(op_foreign_fun, arg1, arg2, arg3))
 
-        arg5 = OIR.addinput!(bb, OIR.InputValue(:x))
+        arg5 = OIR.addinput!(bb, OIR.InputVariable(:x))
         arg6 = OIR.constant(10.0)
         arg7 = OIR.constant(2.0)
         arg8 = OIR.addinstruction!(bb, OIR.call(op_foreign_fun, arg5, arg6, arg7))
@@ -106,7 +106,7 @@ end
 
 @testset "GetIndex" begin
     bb = OIR.BasicBlock()
-    arg1 = OIR.addinput!(bb, OIR.InputValue(:x))
+    arg1 = OIR.addinput!(bb, OIR.InputVariable(:x))
     arg2 = OIR.constant(2)
     arg3 = OIR.addinstruction!(bb, OIR.GetIndex(arg1, arg2)) # reads x[2]
     arg4 = OIR.constant(5.0)
@@ -127,7 +127,7 @@ end
 
 @testset "SetIndex" begin
     bb = OIR.BasicBlock()
-    arginput = OIR.addinput!(bb, OIR.InputValue(:x))
+    arginput = OIR.addinput!(bb, OIR.InputVariable(:x))
     arg1 = OIR.constant(Float64)
     arg3 = OIR.addinstruction!(bb, OIR.call(zeros, arg1, arginput))
     OIR.assign!(bb, OIR.Variable(:vec), arg3)
@@ -178,7 +178,7 @@ end
 
 @testset "Basic Block" begin
     bb = OIR.BasicBlock()
-    x = OIR.addinput!(bb, OIR.InputValue(:x))
+    x = OIR.addinput!(bb, OIR.InputVariable(:x))
     arg1 = OIR.constant(10.0)
     arg2 = OIR.constant(2.0)
     arg3 = OIR.addinstruction!(bb, OIR.call(op_mul, arg1, arg2))
@@ -238,9 +238,9 @@ end
 
 @testset "Inputs" begin
     bb = OIR.BasicBlock()
-    x = OIR.addinput!(bb, OIR.InputValue(:x))
-    y = OIR.addinput!(bb, OIR.InputValue(:y))
-    z = OIR.addinput!(bb, OIR.InputValue(:z))
+    x = OIR.addinput!(bb, OIR.InputVariable(:x))
+    y = OIR.addinput!(bb, OIR.InputVariable(:y))
+    z = OIR.addinput!(bb, OIR.InputVariable(:z))
     out = OIR.addinstruction!(bb, OIR.call(op_foreign_fun, x, y, z))
     OIR.assign!(bb, OIR.Variable(:result), out)
 
@@ -250,7 +250,7 @@ end
 
     # println(bb)
 
-    input = Dict(OIR.InputValue(:z) => 10.0, OIR.InputValue(:y) => 20.0, OIR.InputValue(:x) => 30.0)
+    input = Dict(OIR.InputVariable(:z) => 10.0, OIR.InputVariable(:y) => 20.0, OIR.InputVariable(:x) => 30.0)
 
     let
         f = OIR.compile(OIR.BasicBlockInterpreter, bb)
@@ -291,8 +291,10 @@ end
 
 @testset "Variables" begin
     bb = OIR.BasicBlock()
-    x = OIR.addinput!(bb, OIR.InputValue(:x))
+    x = OIR.addinput!(bb, OIR.InputVariable(:x))
     z = OIR.constant(1.0)
+    cnst = OIR.Variable(:cnst)
+    OIR.assign!(bb, cnst, z)
     slot = OIR.Variable(:slot)
     OIR.assign!(bb, slot, z)
     out = OIR.addinstruction!(bb, OIR.call(op_sum, OIR.follow(bb, slot), x))
@@ -309,20 +311,22 @@ end
         f = OIR.compile(OIR.BasicBlockInterpreter, bb)
         @test f(input).slot == 11.0
         @test f(input).output == 1.0 + 10.0 + 10.0
+        @test f(input).cnst == 1.0
     end
 
     let
         fc = OIR.compile(OIR.Native, bb)
         @test fc(input).slot == 11.0
         @test fc(input).output == 1.0 + 10.0 + 10.0
+        @test fc(input).cnst == 1.0
     end
 end
 
 @testset "Native" begin
     bb = OIR.BasicBlock()
-    in1 = OIR.addinput!(bb, OIR.InputValue(:x))
-    in2 = OIR.addinput!(bb, OIR.InputValue(:y))
-    in3 = OIR.addinput!(bb, OIR.InputValue(:z))
+    in1 = OIR.addinput!(bb, OIR.InputVariable(:x))
+    in2 = OIR.addinput!(bb, OIR.InputVariable(:y))
+    in3 = OIR.addinput!(bb, OIR.InputVariable(:z))
     c3 = OIR.constant(3)
     c2 = OIR.constant(2)
     arg1 = OIR.addinstruction!(bb, OIR.call(op_pow, in1, c3))

@@ -15,10 +15,9 @@ struct SSAValue <: StaticAddress
 end
 
 """
-External input to the program.
-It is considered an immutable value.
+External immutable input to the program.
 """
-struct InputValue <: StaticAddress
+struct InputVariable <: StaticAddress
     symbol::Symbol
 end
 
@@ -112,26 +111,26 @@ abstract type Program end
 
 mutable struct BasicBlock <: Program
     instructions::LookupTable{LinearInstruction}
-    inputs::LookupTable{InputValue}
+    inputs::LookupTable{InputVariable}
     variables::Dict{Variable, StaticAddress}
 #    branch::Union{Nothing, BranchInstruction}
 #    next::Union{Nothing, BasicBlock}
 #    cfg::Union{Nothing, Program}
 end
 
-struct Goto <: BranchInstruction
-    target::BasicBlock
-end
+#struct Goto <: BranchInstruction
+#    target::BasicBlock
+#end
 
-struct GotoIf{A<:StaticAddress} <: BranchInstruction
-    cond::A
-    target::BasicBlock
-end
+#struct GotoIf{A<:StaticAddress} <: BranchInstruction
+#    cond::A
+#    target::BasicBlock
+#end
 
-struct GotoIfNot{A<:StaticAddress} <: BranchInstruction
-    cond::A
-    target::BasicBlock
-end
+#struct GotoIfNot{A<:StaticAddress} <: BranchInstruction
+#    cond::A
+#    target::BasicBlock
+#end
 
 #mutable struct CFG <: Program
 #    start::BasicBlock

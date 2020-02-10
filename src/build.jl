@@ -2,18 +2,10 @@
 function BasicBlock()
     BasicBlock(
         LookupTable{LinearInstruction}(),
-        LookupTable{InputValue}(),
+        LookupTable{InputVariable}(),
         Dict{Variable, StaticAddress}()
     )
 end
-
-#=
-function CFG()
-    cfg = CFG(BasicBlock(), Dict{Variable, StaticAddress}())
-    cfg.start.cfg = cfg
-    cfg
-end
-=#
 
 constant(val) = Const(val)
 eachvariable(bb::BasicBlock) = keys(bb.variables)
@@ -68,9 +60,9 @@ function assign!(b::BasicBlock, variable::Variable, value::StaticAddress)
     nothing
 end
 
-inputindex(bb::BasicBlock, op::InputValue) = indexof(bb.inputs, op)
+inputindex(bb::BasicBlock, op::InputVariable) = indexof(bb.inputs, op)
 
-function addinput!(b::BasicBlock, iv::InputValue) :: StaticAddress
+function addinput!(b::BasicBlock, iv::InputVariable) :: StaticAddress
     addentry!(b.inputs, iv)
     return iv
 end
