@@ -38,18 +38,20 @@ function benchmark_julia(x::Vector)
 end
 
 bb = OIR.BasicBlock()
-in1 = OIR.addinput!(bb, OIR.InputVariable(:x))
-in2 = OIR.addinput!(bb, OIR.InputVariable(:y))
+in1 = OIR.ImmutableVariable(:x)
+in2 = OIR.ImmutableVariable(:y)
+OIR.addinput!(bb, in1)
+OIR.addinput!(bb, in2)
 
-argvec = OIR.addinstruction!(bb, OIR.call(zeros, OIR.constant(Float64), OIR.constant(3)))
+argvec = OIR.addinstruction!(bb, OIR.call(op_zeros, OIR.constant(Float64), OIR.constant(3)))
+var_vec = OIR.MutableVariable(:v)
+OIR.assign!(bb, var_vec, argvec)
 
-OIR.addinstruction!(bb, OIR.SetIndex(argvec, in1, OIR.constant(1)))
-OIR.addinstruction!(bb, OIR.SetIndex(argvec, in2, OIR.constant(2)))
+OIR.addinstruction!(bb, OIR.callsetindex(var_vec, in1, OIR.constant(1)))
+OIR.addinstruction!(bb, OIR.callsetindex(var_vec, in2, OIR.constant(2)))
 
-OIR.assign!(bb, OIR.Variable(:v), argvec)
-
-arg1 = OIR.addinstruction!(bb, OIR.GetIndex(argvec, OIR.constant(1)))
-arg2 = OIR.addinstruction!(bb, OIR.GetIndex(argvec, OIR.constant(2)))
+arg1 = OIR.addinstruction!(bb, OIR.callgetindex(var_vec, OIR.constant(1)))
+arg2 = OIR.addinstruction!(bb, OIR.callgetindex(var_vec, OIR.constant(2)))
 
 # (((-( x[1] - x[2])) + 1.0 ) * 2.0) / 1.0
 arg3 = OIR.addinstruction!(bb, OIR.call(op_sub, arg1, arg2))
@@ -58,7 +60,7 @@ arg5 = OIR.addinstruction!(bb, OIR.call(op_sum, arg4, OIR.constant(1.0)))
 arg6 = OIR.addinstruction!(bb, OIR.call(op_mul, arg5, OIR.constant(2.0)))
 arg7 = OIR.addinstruction!(bb, OIR.call(op_div, arg6, OIR.constant(1.0)))
 
-OIR.assign!(bb, OIR.Variable(:result), arg7)
+OIR.assign!(bb, OIR.ImmutableVariable(:result), arg7)
 
 println()
 @info("Benchmarks")

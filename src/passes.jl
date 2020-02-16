@@ -1,5 +1,6 @@
 
 is_pure(rule::OptimizationRule) = rule.pure
+is_impure(rule::OptimizationRule) = !is_pure(rule)
 is_commutative(rule::OptimizationRule) = rule.commutative
 has_left_identity_property(rule::OptimizationRule) = rule.hasleftidentity
 has_right_identity_property(rule::OptimizationRule) = rule.hasrightidentity
@@ -18,24 +19,26 @@ function get_identity_element(rule::OptimizationRule)
 end
 
 #
-# define OpimizationRule methods for Op and AbstractCall
+# define OpimizationRule methods for Op and AbstractOpCall
 #
 
-for fun in (:is_pure, :is_commutative, :has_identity_property, :has_left_identity_property, :has_right_identity_property, :get_identity_element, :has_identity_element)
+for fun in (:is_pure, :is_impure, :is_commutative, :has_identity_property, :has_left_identity_property, :has_right_identity_property, :get_identity_element, :has_identity_element)
     @eval begin
         function ($fun)(::Type{Op{F, OPTRULE}}) where {F, OPTRULE}
+            @assert typeof(OPTRULE) <: OptimizationRule
             ($fun)(OPTRULE)
         end
 
         function ($fun)(::Op{F, OPTRULE}) where {F, OPTRULE}
+            @assert typeof(OPTRULE) <: OptimizationRule
             ($fun)(OPTRULE)
         end
 
-        function ($fun)(::Type{AbstractCall{OP}}) where {OP}
+        function ($fun)(::Type{T}) where {OP, T<:AbstractOpCall{OP}}
             ($fun)(OP)
         end
 
-        function ($fun)(::AbstractCall{OP}) where {OP}
+        function ($fun)(::T) where {OP, T<:AbstractOpCall{OP}}
             ($fun)(OP)
         end
     end
@@ -54,7 +57,7 @@ end
 # Constant Propagation
 #
 
-struct OptimizationPassResult{A<:StaticAddress}
+struct OptimizationPassResult{A<:ImmutableValue}
     success::Bool
     val::A
 end
@@ -153,19 +156,18 @@ function addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: Addre
 end
 ```
 """
-function try_on_add_instruction_passes(::Program, instruction::LinearInstruction)
+function try_on_add_instruction_passes(::Program, instruction::ImpureInstruction)
     # optimization pass only makes sense in the context of a PureCall
     return nothing
 end
 
-function try_on_add_instruction_passes(bb::BasicBlock, instruction::PureCall{OP}) :: Union{Nothing, Address} where {OP}
-    @assert is_pure(OP) "Beloved?"
+function try_on_add_instruction_passes(bb::BasicBlock, instruction::PureInstruction) :: Union{Nothing, ImmutableValue}
 
     # all pure ops go thru constant propagation
     # next we check for identity element
     # last optim is for commutative op
     for fn in (try_constant_propagation, try_identity_element_pass, try_commutative_op)
-        result = fn(bb, instruction)
+        result = fn(bb, instruction.call)
         if result.success
             return result.val
         end

@@ -1,45 +1,69 @@
 
-abstract type Address end
-abstract type StaticAddress <: Address end
-abstract type MutableAddress <: Address end
+abstract type Mutability end
 
-struct NullPointer <: StaticAddress
+struct Mutable <: Mutability
+end
+
+struct Immutable <: Mutability
+end
+
+abstract type AbstractValue{M<:Mutability} end
+
+abstract type MutableValue <: AbstractValue{Mutable} end
+abstract type ImmutableValue <: AbstractValue{Immutable} end
+
+@generated function is_mutable(::Type{T}) :: Bool where {M<:Mutability, T<:AbstractValue{M}}
+    M == Mutable
+end
+
+@generated function is_immutable(::Type{T}) :: Bool where {M<:Mutability, T<:AbstractValue{M}}
+    M == Immutable
+end
+
+@generated function is_mutable(v::AbstractValue) :: Bool
+    is_mutable(v)
+end
+
+@generated function is_immutable(v::AbstractValue) :: Bool
+    is_immutable(v)
+end
+
+struct NullPointer <: ImmutableValue
 end
 
 """
 A pointer to an instruction
 that computes a value.
 """
-struct SSAValue <: StaticAddress
-    index::Int
+struct SSAValue <: ImmutableValue
+    address::Int # instruction location
 end
 
 """
 Constant value to be encoded directly into the IR.
 The address is the value itself.
 """
-struct Const{T} <: StaticAddress
+struct Const{T} <: ImmutableValue
     val::T
 end
 
 """
-A mutable variable that can be
+A variable that can be
 assigned with [`OptimizingIR.assign!`](@ref).
 """
-struct MutableVariable <: MutableAddress
+struct Variable{M} <: AbstractValue{M}
     symbol::Symbol
 end
 
-"""
-An immutable variable that can be
-assigned with [`OptimizingIR.assign!`](@ref).
-"""
-struct ImmutableVariable <: StaticAddress
-    symbol::Symbol
-end
+MutableVariable(sym::Symbol) = Variable{Mutable}(sym)
+ImmutableVariable(sym::Symbol) = Variable{Immutable}(sym)
 
+"""
+Sets which optimizations are
+allowed to an `Op`.
+"""
 struct OptimizationRule{T}
-    pure::Bool
+    pure::Bool              # whether the Op itself is pure or impure
     commutative::Bool
     hasleftidentity::Bool   # [left=element] op      right
     hasrightidentity::Bool  #     left       op [right=element]
@@ -56,6 +80,7 @@ struct OptimizationRule{T}
     end
 end
 
+# typeof(O) == OptimizationRule
 struct Op{F<:Function, O}
     op::F
 
@@ -64,80 +89,97 @@ struct Op{F<:Function, O}
     end
 end
 
+abstract type AbstractCall end
+abstract type AbstractOpCall{OP<:Op} <: AbstractCall end
 abstract type Instruction end
-abstract type LinearInstruction <: Instruction end
+abstract type LinearInstruction{T<:AbstractCall} <: Instruction end
 abstract type BranchInstruction <: Instruction end
 
-abstract type AbstractCall{OP<:Op} <: LinearInstruction end
-
 """
-A `PureCall` is a call to an operation `OP`
+A `PureInstruction` is a call to an operation
 that always returns the same value
-if the same arguments are passed to `OP`.
+if the same arguments are passed to the instruction.
 It is suitable for memoization, in the sense that
 it can be optimized in the Value-Number algorithm
-inside a Blasic Block.
+inside a Basic Block.
 """
-abstract type PureCall{OP} <: AbstractCall{OP} end
+struct PureInstruction{T} <: LinearInstruction{T}
+    call::T
 
-struct CallUnary{OP, A<:StaticAddress} <: PureCall{OP}
-    op::OP
-    arg::A
-end
+    function PureInstruction(call::G) where {G<:AbstractOpCall}
+        # An AbstractOpCall has on Op that is either pure or impure
+        @assert is_pure(call) "$G must be a pure call."
+        return new{G}(call)
+    end
 
-struct CallBinary{OP, A<:StaticAddress, B<:StaticAddress} <: PureCall{OP}
-    op::OP
-    arg1::A
-    arg2::B
-end
-
-struct CallVararg{OP, N} <: PureCall{OP}
-    op::OP
-    args::NTuple{N, StaticAddress}
+    function PureInstruction(call::G) where {G<:AbstractCall}
+        # catch other AbstractCalls (GetIndex/SetIndex)
+        return new{G}(call)
+    end
 end
 
 """
-An `ImpureCall` is a call to an operation `OP`
+An `ImpureInstruction` is a call to an operation
 that not always returns the same value
-if the same arguments are passed to `OP`.
+if the same arguments are passed to the instruction.
 It is not suitable for memoization,
 and the Value-Number optimization must be
 disabled for this call.
 
 Marking as mutable avoids Value-Numbering for this call.
 """
-mutable struct ImpureCall{OP, P<:PureCall{OP}} <: AbstractCall{OP}
-    instruction::P
+mutable struct ImpureInstruction{T} <: LinearInstruction{T}
+    call::T
 
-    function ImpureCall(instruction::PureCall{OP}) where {OP}
-        @assert !is_pure(OP) "Can't create ImpureCall with a pure OptimizationRule."
-        new{OP, PureCall{OP}}(instruction)
+    function ImpureInstruction(call::G) where {G<:AbstractOpCall}
+        # An AbstractOpCall has on Op that is either pure or impure
+        @assert is_impure(G) "$G must be an impure call."
+        return new{G}(call)
+    end
+
+    function ImpureInstruction(call::G) where {G<:AbstractCall}
+        # catch other AbstractCalls (GetIndex/SetIndex)
+        return new{G}(call)
     end
 end
 
-# marking as mutable avoids Value Numbering for this instruction
-mutable struct GetIndex{N, A<:StaticAddress, B<:StaticAddress} <: LinearInstruction
+struct CallUnary{OP, A<:AbstractValue} <: AbstractOpCall{OP}
+    op::OP
+    arg::A
+end
+
+struct CallBinary{OP, A<:AbstractValue, B<:AbstractValue} <: AbstractOpCall{OP}
+    op::OP
+    arg1::A
+    arg2::B
+end
+
+struct CallVararg{OP, N} <: AbstractOpCall{OP}
+    op::OP
+    args::NTuple{N, AbstractValue}
+end
+
+struct GetIndex{N, A<:Variable} <: AbstractCall
     array::A
-    index::NTuple{N, B}
+    index::NTuple{N, AbstractValue}
 end
 
-GetIndex(array::StaticAddress, index::StaticAddress...) = GetIndex(array, index)
+GetIndex(array::Variable, index::AbstractValue...) = GetIndex(array, index)
 
-# marking as mutable avoids Value Numbering for this instruction
-mutable struct SetIndex{N, A1<:StaticAddress, A2<:StaticAddress} <: LinearInstruction
-    array::A1
-    value::A2
-    index::NTuple{N, StaticAddress}
+struct SetIndex{N, A<:AbstractValue} <: AbstractCall
+    array::Variable{Mutable}
+    value::A
+    index::NTuple{N, AbstractValue}
 end
 
-SetIndex(array::StaticAddress, value::StaticAddress, index::StaticAddress...) = SetIndex(array, value, index)
+SetIndex(array::Variable{Mutable}, value::AbstractValue, index::AbstractValue...) = SetIndex(array, value, index)
 
 abstract type Program end
 
 mutable struct BasicBlock <: Program
     instructions::LookupTable{LinearInstruction}
-    inputs::LookupTable{InputVariable}
-    variables::Dict{Variable, StaticAddress}
+    inputs::LookupTable{Variable}
+    variables::Dict{Variable, ImmutableValue}
 #    branch::Union{Nothing, BranchInstruction}
 #    next::Union{Nothing, BasicBlock}
 #    cfg::Union{Nothing, Program}

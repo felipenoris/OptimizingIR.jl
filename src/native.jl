@@ -54,15 +54,19 @@ function julia_expr(bb::BasicBlock, c::CallVararg)
     Expr(:call, c.op, map( arg -> julia_expr(bb, arg), c.args)...)
 end
 
-julia_expr(bb::BasicBlock, c::ImpureCall) = julia_expr(bb, c.instruction)
-
-function julia_expr(bb::BasicBlock, input::InputVariable)
-    Expr(:call, Base.getindex, :x, inputindex(bb, input))
-end
+julia_expr(bb::BasicBlock, c::ImpureInstruction) = julia_expr(bb, c.call)
+julia_expr(bb::BasicBlock, c::PureInstruction) = julia_expr(bb, c.call)
 
 julia_expr(bb::BasicBlock, constant::Const) = constant.val
-julia_expr(bb::BasicBlock, ssa::SSAValue) = tmpsym(ssa.index)
-julia_expr(bb::BasicBlock, variable::Variable) = julia_expr(bb, follow(bb, variable))
+julia_expr(bb::BasicBlock, ssa::SSAValue) = tmpsym(ssa.address)
+
+function julia_expr(bb::BasicBlock, variable::Variable)
+    if is_input(bb, variable)
+        return Expr(:call, Base.getindex, :x, inputindex(bb, variable))
+    else
+        return julia_expr(bb, follow(bb, variable))
+    end
+end
 
 function julia_expr(bb::BasicBlock, op::GetIndex)
     Expr(:call,

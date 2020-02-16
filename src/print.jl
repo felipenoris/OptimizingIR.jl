@@ -33,8 +33,7 @@ function Base.show(io::IO, c::Const{T}) where {T}
 end
 
 Base.show(io::IO, v::Variable) = print(io, "$(v.symbol)")
-Base.show(io::IO, ssa::SSAValue) = print(io, "%$(ssa.index)")
-Base.show(io::IO, input::InputVariable) = print(io, input.symbol)
+Base.show(io::IO, ssa::SSAValue) = print(io, "%$(ssa.address)")
 Base.show(io::IO, instruction::GetIndex) = print(io, "GetIndex($(instruction.array), $(instruction.index))")
 Base.show(io::IO, instruction::SetIndex) = print(io, "SetIndex($(instruction.array), $(instruction.value), $(instruction.index))")
 Base.show(io::IO, call::CallBinary) = print(io, "call($(call.op), $(call.arg1), $(call.arg2))")
@@ -42,6 +41,7 @@ Base.show(io::IO, call::CallUnary) = print(io, "call($(call.op), $(call.arg))")
 Base.show(io::IO, call::CallVararg) = print(io, "call($(call.op), $(call.args))")
 Base.show(io::IO, op::Op) = print(io, "$(op.op)")
 
+#=
 function Base.show(io::IO, call::ImpureCall)
     iob = IOBuffer()
     print(iob, call.instruction)
@@ -49,3 +49,4 @@ function Base.show(io::IO, call::ImpureCall)
     str_new = replace(str, "call" => "callimpure")
     print(io, str_new)
 end
+=#

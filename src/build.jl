@@ -2,14 +2,15 @@
 function BasicBlock()
     BasicBlock(
         LookupTable{LinearInstruction}(),
-        LookupTable{InputVariable}(),
-        Dict{Variable, StaticAddress}()
+        LookupTable{Variable}(),
+        Dict{Variable, ImmutableValue}()
     )
 end
 
 constant(val) = Const(val)
 eachvariable(bb::BasicBlock) = keys(bb.variables)
 #hasbranches(bb::BasicBlock) = bb.branch != nothing || bb.next != nothing
+is_input(bb::BasicBlock, var::Variable) = var ∈ bb.inputs
 
 function Op(f::F;
             pure::Bool=false,
@@ -31,12 +32,12 @@ end
 Similar to deref, but returns the static address
 for which the argument is pointing to.
 """
-function follow(program::BasicBlock, arg::Variable) :: StaticAddress
+function follow(program::BasicBlock, arg::Variable) :: ImmutableValue
     @assert haskey(program.variables, arg) "Variable $arg was not defined."
     return program.variables[arg]
 end
 
-follow(bb::BasicBlock, arg::SSAValue) = bb.instructions[arg.index]
+follow(bb::BasicBlock, arg::SSAValue) = bb.instructions[arg.address]
 
 struct InstructionIterator{T}
     instructions::T
@@ -45,7 +46,7 @@ Base.iterate(itr::InstructionIterator) = iterate(itr.instructions)
 Base.iterate(itr::InstructionIterator, state) = iterate(itr.instructions, state)
 eachinstruction(bb::BasicBlock) = InstructionIterator(bb.instructions)
 
-function addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: StaticAddress
+function addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: ImmutableValue
 
     result = try_on_add_instruction_passes(b, instruction)
     if result != nothing
@@ -55,28 +56,59 @@ function addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: Stati
     return SSAValue(addentry!(b.instructions, instruction))
 end
 
-function assign!(b::BasicBlock, variable::Variable, value::StaticAddress)
+function assign!(b::BasicBlock, variable::Variable, value::ImmutableValue)
     b.variables[variable] = value
     nothing
 end
 
-inputindex(bb::BasicBlock, op::InputVariable) = indexof(bb.inputs, op)
+inputindex(bb::BasicBlock, op::Variable) = indexof(bb.inputs, op)
 
-function addinput!(b::BasicBlock, iv::InputVariable) :: StaticAddress
+function addinput!(b::BasicBlock, iv::Variable)
     addentry!(b.inputs, iv)
-    return iv
+    nothing
 end
 
-call(op::Op, arg::StaticAddress) = wrap_if_impure(CallUnary(op, arg))
-call(op::Op, arg1::StaticAddress, arg2::StaticAddress) = wrap_if_impure(CallBinary(op, arg1, arg2))
-call(op::Op, args::StaticAddress...) = wrap_if_impure(CallVararg(op, args))
-
-@generated function wrap_if_impure(instruction::PureCall{OP}) where {OP}
-
-    is_pure(OP) ? :instruction : :(ImpureCall(instruction))
-
+@generated function call(op::Op, arg::A) :: LinearInstruction where {A<:AbstractValue}
+    # a call is pure if the Op itself is pure and the argument is immutable
+    pure = is_pure(op) && is_immutable(A)
+    wrapper_type = pure ? :PureInstruction : :ImpureInstruction
+    return quote
+        $wrapper_type(CallUnary(op, arg))
+    end
 end
 
-call(f::Function, arg::StaticAddress) = call(Op(f), arg)
-call(f::Function, arg1::StaticAddress, arg2::StaticAddress) = call(Op(f), arg1, arg2)
-call(f::Function, args::StaticAddress...) = call(Op(f), args...)
+@generated function call(op::Op, arg1::A, arg2::B) :: LinearInstruction where {A<:AbstractValue, B<:AbstractValue}
+    pure = is_pure(op) && is_immutable(arg1) && is_immutable(arg2)
+    wrapper_type = pure ? :PureInstruction : :ImpureInstruction
+    return quote
+        $wrapper_type(CallBinary(op, arg1, arg2))
+    end
+end
+
+@generated function call(op::Op, args...) :: LinearInstruction
+    for a in args
+        @assert a <: AbstractValue
+    end
+
+    pure = is_pure(op) && all(is_immutable.(args))
+    wrapper_type = pure ? :PureInstruction : :ImpureInstruction
+    return quote
+        $wrapper_type(CallVararg(op, args))
+    end
+end
+
+@generated function callgetindex(array::Variable, index...) :: LinearInstruction
+    for a in index
+        @assert a <: AbstractValue
+    end
+
+    pure = is_immutable(array) && all(is_immutable.(index))
+    wrapper_type = pure ? :PureInstruction : :ImpureInstruction
+    return quote
+        $wrapper_type(GetIndex(array, index))
+    end
+end
+
+function callsetindex(array::Variable{Mutable}, value::AbstractValue, index...) :: LinearInstruction
+    return ImpureInstruction(SetIndex(array, value, index))
+end
