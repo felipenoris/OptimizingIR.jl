@@ -15,19 +15,26 @@ struct SSAValue <: StaticAddress
 end
 
 """
-External immutable input to the program.
+Constant value to be encoded directly into the IR.
+The address is the value itself.
 """
-struct InputVariable <: StaticAddress
-    symbol::Symbol
-end
-
-"Constant value to be encoded directly into the IR"
 struct Const{T} <: StaticAddress
     val::T
 end
 
-"A mutable output value. See [`OptimizingIR.assign!`](@ref)."
-struct Variable <: MutableAddress
+"""
+A mutable variable that can be
+assigned with [`OptimizingIR.assign!`](@ref).
+"""
+struct MutableVariable <: MutableAddress
+    symbol::Symbol
+end
+
+"""
+An immutable variable that can be
+assigned with [`OptimizingIR.assign!`](@ref).
+"""
+struct ImmutableVariable <: StaticAddress
     symbol::Symbol
 end
 
@@ -62,6 +69,15 @@ abstract type LinearInstruction <: Instruction end
 abstract type BranchInstruction <: Instruction end
 
 abstract type AbstractCall{OP<:Op} <: LinearInstruction end
+
+"""
+A `PureCall` is a call to an operation `OP`
+that always returns the same value
+if the same arguments are passed to `OP`.
+It is suitable for memoization, in the sense that
+it can be optimized in the Value-Number algorithm
+inside a Blasic Block.
+"""
 abstract type PureCall{OP} <: AbstractCall{OP} end
 
 struct CallUnary{OP, A<:StaticAddress} <: PureCall{OP}
@@ -80,7 +96,16 @@ struct CallVararg{OP, N} <: PureCall{OP}
     args::NTuple{N, StaticAddress}
 end
 
-# marking as mutable avoids Value Numbering for this instruction
+"""
+An `ImpureCall` is a call to an operation `OP`
+that not always returns the same value
+if the same arguments are passed to `OP`.
+It is not suitable for memoization,
+and the Value-Number optimization must be
+disabled for this call.
+
+Marking as mutable avoids Value-Numbering for this call.
+"""
 mutable struct ImpureCall{OP, P<:PureCall{OP}} <: AbstractCall{OP}
     instruction::P
 
