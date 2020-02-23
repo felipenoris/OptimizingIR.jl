@@ -9,10 +9,12 @@ function BasicBlock()
 end
 
 input_variables(bb::BasicBlock) = bb.inputs
+output_variables(bb::BasicBlock) = bb.outputs
 constant(val) = Const(val)
 eachvariable(bb::BasicBlock) = keys(bb.variables)
 #hasbranches(bb::BasicBlock) = bb.branch != nothing || bb.next != nothing
 is_input(bb::BasicBlock, var::Variable) = var ∈ bb.inputs
+is_output(bb::BasicBlock, var::Variable) = var ∈ bb.outputs
 
 function Op(f::F;
             pure::Bool=false,
@@ -29,7 +31,7 @@ end
 (op::Op)(args...) = op.op(args...)
 
 """
-    follow(program::Program, arg::Address) :: StaticAddress
+    follow(program::Program, arg::AbstractValue) :: ImmutableValue
 
 Similar to deref, but returns the static address
 for which the argument is pointing to.

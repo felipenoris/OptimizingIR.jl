@@ -9,13 +9,7 @@ end
 
 foreign_fun(a, b, c) = a^3 + b^2 + c
 julia_basic_block_test_function(x::Number) = (((-((10.0 * 2.0 + x) / 1.0) + (x + 10.0 * 2.0) + 1.0) * 1.0 / 2.0) + (0.0 * x) + 1.0) * 1.0
-
-function julia_native_test_function(x::Number, y::Number, z::Number)
-    result = x^3 + y^2 + z
-    out = Dict{Symbol, Any}()
-    out[:result] = result
-    return OptimizingIR.namedtuple(out)
-end
+julia_native_test_function(x::Number, y::Number, z::Number) = x^3 + y^2 + z
 
 const op_sum = OIR.Op(+, pure=true, commutative=true, hasleftidentity=true, hasrightidentity=true, identity_element=0)
 const op_sub = OIR.Op(-, pure=true, hasrightidentity=true, identity_element=0)
@@ -99,17 +93,19 @@ end
         arg7 = OIR.constant(2.0)
         arg8 = OIR.addinstruction!(bb, OIR.call(op_foreign_fun, var_x_2nd_instance, arg6, arg7))
         arg9 = OIR.addinstruction!(bb, OIR.call(op_sum, arg4, arg8))
-        OIR.assign!(bb, OIR.ImmutableVariable(:output), arg9)
+        var_output = OIR.ImmutableVariable(:output)
+        OIR.addoutput!(bb, var_output)
+        OIR.assign!(bb, var_output, arg9)
         @test length(bb.instructions) == 2
 
         # println(bb)
 
         input = 20.0
         finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)
-        @test finterpreter(input).output ≈ 2 * (input^3 + 10^2 + 2)
+        @test finterpreter(input) ≈ 2 * (input^3 + 10^2 + 2)
 
         fnative = OIR.compile(OIR.Native, bb)
-        @test fnative(input).output ≈ 2 * (input^3 + 10^2 + 2)
+        @test fnative(input) ≈ 2 * (input^3 + 10^2 + 2)
     end
 
     @testset "ImpureCall" begin
@@ -132,16 +128,18 @@ end
     arg5 = OIR.addinstruction!(bb, OIR.call(op_mul, arg4, arg3))
     arg6 = OIR.addinstruction!(bb, OIR.callgetindex(var_x, arg2)) # reads x[2]
     arg7 = OIR.addinstruction!(bb, OIR.call(op_mul, arg6, arg5))
-    OIR.assign!(bb, OIR.ImmutableVariable(:output), arg7)
+    var_output = OIR.ImmutableVariable(:output)
+    OIR.addoutput!(bb, var_output)
+    OIR.assign!(bb, var_output, arg7)
     @test length(bb.instructions) == 3
 
     # println(bb)
 
     finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)
-    @test finterpreter([5.0, 6.0, 7.0]).output ≈ 6.0 * 5.0 * 6.0
+    @test finterpreter([5.0, 6.0, 7.0]) ≈ 6.0 * 5.0 * 6.0
 
     fnative = OIR.compile(OIR.Native, bb)
-    @test fnative([5.0, 6.0, 7.0]).output ≈ 6.0 * 5.0 * 6.0
+    @test fnative([5.0, 6.0, 7.0]) ≈ 6.0 * 5.0 * 6.0
 end
 
 @testset "SetIndex" begin
@@ -154,44 +152,54 @@ end
     OIR.assign!(bb, var_vec, arg3)
     arg4 = OIR.constant(1)
     arg_inspect = OIR.addinstruction!(bb, OIR.callgetindex(var_vec, arg4))
-    OIR.assign!(bb, OIR.ImmutableVariable(:inspect1), arg_inspect)
+    var_inspect1 = OIR.ImmutableVariable(:inspect1)
+    OIR.assign!(bb, var_inspect1, arg_inspect)
     arg_input_value = OIR.constant(10)
     arg5 = OIR.addinstruction!(bb, OIR.callsetindex(var_vec, arg_input_value, arg4))
     arg_inspect = OIR.addinstruction!(bb, OIR.callgetindex(var_vec, arg4))
-    OIR.assign!(bb, OIR.ImmutableVariable(:inspect2), arg_inspect)
+    var_inspect2 = OIR.ImmutableVariable(:inspect2)
+    OIR.assign!(bb, var_inspect2, arg_inspect)
     arg6 = OIR.addinstruction!(bb, OIR.call(op_mul, OIR.constant(2.0), arg_inspect))
-    OIR.assign!(bb, OIR.ImmutableVariable(:inspect3), arg6)
+    var_inspect3 = OIR.ImmutableVariable(:inspect3)
+    OIR.assign!(bb, var_inspect3, arg6)
     arg7 = OIR.addinstruction!(bb, OIR.call(op_mul, OIR.constant(1.0), arg6))
     arg8 = OIR.addinstruction!(bb, OIR.call(op_mul, arg7, OIR.constant(1.0)))
     arg9 = OIR.addinstruction!(bb, OIR.call(op_sum, arg8, OIR.constant(0.0)))
     arg10 = OIR.addinstruction!(bb, OIR.call(op_sum, OIR.constant(0.0), arg9))
     arg11 = OIR.addinstruction!(bb, OIR.call(op_sub, arg10, OIR.constant(0.0)))
     arg12 = OIR.addinstruction!(bb, OIR.call(op_div, arg11, OIR.constant(1.0)))
-    OIR.assign!(bb, OIR.ImmutableVariable(:inspect4), arg12)
+    var_inspect4 = OIR.ImmutableVariable(:inspect4)
+    OIR.assign!(bb, var_inspect4, arg12)
     @test length(bb.instructions) == 5
+
+    OIR.addoutput!(bb, var_vec)
+    OIR.addoutput!(bb, var_inspect1)
+    OIR.addoutput!(bb, var_inspect2)
+    OIR.addoutput!(bb, var_inspect3)
+    OIR.addoutput!(bb, var_inspect4)
 
     println(bb)
 
     let
         finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)
-        result = finterpreter(3)
-        @test result.inspect1 ≈ 0.0
-        @test result.inspect2 ≈ 10.0
-        @test isa(result.inspect2, Float64)
-        @test result.inspect3 ≈ 20.0
-        @test result.inspect4 ≈ 20.0
-        @test result.vec == [ 10.0, 0.0, 0.0 ]
+        out_vec, out_inspect1, out_inspect2, out_inspect3, out_inspect4 = finterpreter(3)
+        @test out_inspect1 ≈ 0.0
+        @test out_inspect2 ≈ 10.0
+        @test isa(out_inspect2, Float64)
+        @test out_inspect3 ≈ 20.0
+        @test out_inspect4 ≈ 20.0
+        @test out_vec == [ 10.0, 0.0, 0.0 ]
     end
 
     let
         fnative = OIR.compile(OIR.Native, bb)
-        result = fnative(3)
-        @test result.inspect1 ≈ 0.0
-        @test result.inspect2 ≈ 10.0
-        @test isa(result.inspect2, Float64)
-        @test result.inspect3 ≈ 20.0
-        @test result.inspect4 ≈ 20.0
-        @test result.vec == [ 10.0, 0.0, 0.0 ]
+        out_vec, out_inspect1, out_inspect2, out_inspect3, out_inspect4 = fnative(3)
+        @test out_inspect1 ≈ 0.0
+        @test out_inspect2 ≈ 10.0
+        @test isa(out_inspect2, Float64)
+        @test out_inspect3 ≈ 20.0
+        @test out_inspect4 ≈ 20.0
+        @test out_vec == [ 10.0, 0.0, 0.0 ]
     end
 end
 
@@ -217,7 +225,9 @@ end
     arg16 = OIR.constant(1.0)
     arg17 = OIR.addinstruction!(bb, OIR.call(op_sum, arg16, arg15))
     arg18 = OIR.addinstruction!(bb, OIR.call(op_mul, arg16, arg17))
-    OIR.assign!(bb, OIR.ImmutableVariable(:output), arg18)
+    var_output = OIR.ImmutableVariable(:output)
+    OIR.addoutput!(bb, var_output)
+    OIR.assign!(bb, var_output, arg18)
     @test length(bb.instructions) == 8
 
     # println(bb)
@@ -225,31 +235,31 @@ end
     let
         input = 10.0
         f = OIR.compile(OIR.BasicBlockInterpreter, bb)
-        result = f(input)
-        @test result.output ≈ julia_basic_block_test_function(input)
+        @test f(input) ≈ julia_basic_block_test_function(input)
     end
 
     let
         input = 10.0
         f = OIR.compile(OIR.Native, bb)
-        result = f(input)
-        @test result.output ≈ julia_basic_block_test_function(input)
+        @test f(input) ≈ julia_basic_block_test_function(input)
     end
 
     @testset "Multiply by zero" begin
         last_instruction_ssavalue = OIR.SSAValue(lastindex(bb.instructions))
         arg_zero = OIR.constant(0.0)
         arg_result = OIR.addinstruction!(bb, OIR.call(op_mul, last_instruction_ssavalue, arg_zero))
-        OIR.assign!(bb, OIR.ImmutableVariable(:output), arg_result)
+        var_output = OIR.ImmutableVariable(:output)
+        OIR.addoutput!(bb, var_output)
+        OIR.assign!(bb, var_output, arg_result)
 
         let
             f = OIR.compile(OIR.BasicBlockInterpreter, bb)
-            @test f(10.0).output == 0.0
+            @test f(10.0) == 0.0
         end
 
         let
             f = OIR.compile(OIR.Native, bb)
-            @test f(10.0).output == 0.0
+            @test f(10.0) == 0.0
         end
     end
 end
@@ -263,7 +273,9 @@ end
     OIR.addinput!(bb, y)
     OIR.addinput!(bb, z)
     out = OIR.addinstruction!(bb, OIR.call(op_foreign_fun, x, y, z))
-    OIR.assign!(bb, OIR.ImmutableVariable(:result), out)
+    var_result = OIR.ImmutableVariable(:result)
+    OIR.addoutput!(bb, var_result)
+    OIR.assign!(bb, var_result, out)
 
     # cannot be optimized to a constant since it depends on the inputs
     @test length(bb.instructions) == 1
@@ -272,12 +284,12 @@ end
 
     let
         f = OIR.compile(OIR.BasicBlockInterpreter, bb)
-        @test f(30.0, 20.0, 10.0).result ≈ foreign_fun(30.0, 20.0, 10.0)
+        @test f(30.0, 20.0, 10.0) ≈ foreign_fun(30.0, 20.0, 10.0)
     end
 
     let
         f = OIR.compile(OIR.Native, bb)
-        @test f(30.0, 20.0, 10.0).result ≈ foreign_fun(30.0, 20.0, 10.0)
+        @test f(30.0, 20.0, 10.0) ≈ foreign_fun(30.0, 20.0, 10.0)
     end
 end
 
@@ -288,19 +300,21 @@ end
         y = OIR.constant(20.0)
         z = OIR.constant(10.0)
         out = OIR.addinstruction!(bb, OIR.call(op_foreign_fun, x, y, z))
-        OIR.assign!(bb, OIR.ImmutableVariable(:result), out)
+        var_result = OIR.ImmutableVariable(:result)
+        OIR.addoutput!(bb, var_result)
+        OIR.assign!(bb, var_result, out)
         @test isa(out, OIR.Const)
 
         # println(bb)
 
         let
             f = OIR.compile(OIR.BasicBlockInterpreter, bb)
-            @test f().result ≈ foreign_fun(30.0, 20.0, 10.0)
+            @test f() ≈ foreign_fun(30.0, 20.0, 10.0)
         end
 
         let
             f = OIR.compile(OIR.Native, bb)
-            @test f().result ≈ foreign_fun(30.0, 20.0, 10.0)
+            @test f() ≈ foreign_fun(30.0, 20.0, 10.0)
         end
     end
 end
@@ -310,15 +324,20 @@ end
     x = OIR.ImmutableVariable(:x)
     OIR.addinput!(bb, x)
     z = OIR.constant(1.0)
-    cnst = OIR.ImmutableVariable(:cnst)
-    OIR.assign!(bb, cnst, z)
-    slot = OIR.ImmutableVariable(:slot)
-    OIR.assign!(bb, slot, z)
-    out = OIR.addinstruction!(bb, OIR.call(op_sum, OIR.follow(bb, slot), x))
-    OIR.assign!(bb, slot, out)
-    out = OIR.addinstruction!(bb, OIR.call(op_sum, OIR.follow(bb, slot), x))
-    OIR.assign!(bb, OIR.ImmutableVariable(:output), out)
+    var_cnst = OIR.ImmutableVariable(:cnst)
+    OIR.assign!(bb, var_cnst, z)
+    var_slot = OIR.ImmutableVariable(:slot)
+    OIR.assign!(bb, var_slot, z)
+    out = OIR.addinstruction!(bb, OIR.call(op_sum, OIR.follow(bb, var_slot), x))
+    OIR.assign!(bb, var_slot, out)
+    out = OIR.addinstruction!(bb, OIR.call(op_sum, OIR.follow(bb, var_slot), x))
+    var_output = OIR.ImmutableVariable(:output)
+    OIR.assign!(bb, var_output, out)
     @test length(bb.instructions) == 2
+
+    OIR.addoutput!(bb, var_cnst)
+    OIR.addoutput!(bb, var_slot)
+    OIR.addoutput!(bb, var_output)
 
     # println(bb)
 
@@ -326,16 +345,18 @@ end
 
     let
         f = OIR.compile(OIR.BasicBlockInterpreter, bb)
-        @test f(input).slot == 11.0
-        @test f(input).output == 1.0 + 10.0 + 10.0
-        @test f(input).cnst == 1.0
+        cnst, slot, output = f(input)
+        @test slot == 11.0
+        @test output == 1.0 + 10.0 + 10.0
+        @test cnst == 1.0
     end
 
     let
-        fc = OIR.compile(OIR.Native, bb)
-        @test fc(input).slot == 11.0
-        @test fc(input).output == 1.0 + 10.0 + 10.0
-        @test fc(input).cnst == 1.0
+        f = OIR.compile(OIR.Native, bb)
+        cnst, slot, output = f(input)
+        @test slot == 11.0
+        @test output == 1.0 + 10.0 + 10.0
+        @test cnst == 1.0
     end
 end
 
@@ -354,7 +375,9 @@ end
     arg3 = in3
     s1 = OIR.addinstruction!(bb, OIR.call(op_sum, arg1, arg2))
     s2 = OIR.addinstruction!(bb, OIR.call(op_sum, s1, arg3))
-    OIR.assign!(bb, OIR.ImmutableVariable(:result), s2)
+    var_result = OIR.ImmutableVariable(:result)
+    OIR.assign!(bb, var_result, s2)
+    OIR.addoutput!(bb, var_result)
 
     let
         finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)

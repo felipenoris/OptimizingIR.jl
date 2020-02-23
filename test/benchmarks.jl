@@ -3,28 +3,28 @@
 MBP
 [ Info: Benchmarks
 Compile Native:
-  0.000613 seconds (341 allocations: 23.134 KiB)
+  0.000598 seconds (341 allocations: 23.134 KiB)
 Compile BasicBlockInterpreter
-  0.000003 seconds (8 allocations: 496 bytes)
-Compilation Overhead: Native / BasicBlockInterpreter: 402.4x
+  0.000002 seconds (8 allocations: 496 bytes)
+Compilation Overhead: Native / BasicBlockInterpreter: 415.0x
 F Call Native 1st
-  0.022434 seconds (43.46 k allocations: 2.439 MiB)
+  0.026739 seconds (40.26 k allocations: 2.266 MiB)
 F Call Native 2nd
-  0.000004 seconds (8 allocations: 336 bytes)
+  0.000006 seconds (8 allocations: 336 bytes)
 F Call Interpreter 1st
-  0.037738 seconds (41.53 k allocations: 2.337 MiB)
+  0.036071 seconds (48.84 k allocations: 2.675 MiB)
 F Call Interpreter 2nd
-  0.000046 seconds (50 allocations: 2.359 KiB)
+  0.000067 seconds (44 allocations: 1.609 KiB)
 F Call Julia 1st
-  0.006419 seconds (15.65 k allocations: 898.132 KiB)
+  0.006767 seconds (12.46 k allocations: 720.179 KiB)
 F Call Julia 2nd
   0.000003 seconds (8 allocations: 336 bytes)
-F Call Overhead: BasicBlockInterpreter / julia = 27.9x
-F Call Overhead: Native / julia = 1.1x
+F Call Overhead: BasicBlockInterpreter / julia = 32.2x
+F Call Overhead: Native / julia = 1.4x
 [ Info: Compilation + F Call
-BasicBlockInterpreter: 39.8µs
-Native: 563.0µs
-Native / BasicBlockInterpreter = 14.1x
+BasicBlockInterpreter: 37.3µs
+Native: 561.4µs
+Native / BasicBlockInterpreter = 15.0x
 =#
 
 function benchmark_julia(x, y)
@@ -34,7 +34,7 @@ function benchmark_julia(x, y)
 
     result = (((-( v[1] - v[2])) + 1.0 ) * 2.0) / 1.0
 
-    return (v=v, result=result)
+    return v, result
 end
 
 bb = OIR.BasicBlock()
@@ -60,7 +60,11 @@ arg5 = OIR.addinstruction!(bb, OIR.call(op_sum, arg4, OIR.constant(1.0)))
 arg6 = OIR.addinstruction!(bb, OIR.call(op_mul, arg5, OIR.constant(2.0)))
 arg7 = OIR.addinstruction!(bb, OIR.call(op_div, arg6, OIR.constant(1.0)))
 
-OIR.assign!(bb, OIR.ImmutableVariable(:result), arg7)
+var_result = OIR.ImmutableVariable(:result)
+OIR.assign!(bb, var_result, arg7)
+
+OIR.addoutput!(bb, var_vec)
+OIR.addoutput!(bb, var_result)
 
 println()
 @info("Benchmarks")
@@ -95,10 +99,8 @@ println("F Call Julia 1st")
 println("F Call Julia 2nd")
 @time result_julia = benchmark_julia(input...)
 
-@test result_native.result == result_julia.result
-@test result_native.v == result_julia.v
-@test result_interpreter.result == result_julia.result
-@test result_interpreter.v == result_julia.v
+@test result_native == result_julia
+@test result_interpreter == result_julia
 
 execution_el_interpreter = @elapsed finterpreter(input...)
 execution_el_native = @elapsed fnative(input...)

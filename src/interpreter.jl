@@ -17,10 +17,13 @@ end
 required_memory_size(b::BasicBlock) = length(b.instructions)
 
 function set_input!(machine::BasicBlockInterpreter, input)
-    @assert length(input) == length(machine.input_values)
+    @assert length(input_variables(machine.program)) == length(machine.input_values)
+    @assert length(input) == length(machine.input_values) "Expected $(length(machine.input_values)) arguments. Got $(length(input))."
+
     for i in 1:length(machine.input_values)
         @inbounds machine.input_values[i] = input[i]
     end
+
     nothing
 end
 
@@ -53,7 +56,6 @@ deref(machine::AbstractMachine, args::AbstractValue...) = map(ssa -> deref(machi
 
 execute_op(machine::AbstractMachine, op::PureInstruction) = execute_op(machine, op.call)
 execute_op(machine::AbstractMachine, op::ImpureInstruction) = execute_op(machine, op.call)
-
 execute_op(machine::AbstractMachine, op::CallUnary) = op.op(deref(machine, op.arg))
 execute_op(machine::AbstractMachine, op::CallBinary) = op.op(deref(machine, op.arg1), deref(machine, op.arg2))
 execute_op(machine::AbstractMachine, op::CallVararg) = op.op(deref(machine, op.args...)...)
@@ -62,13 +64,14 @@ execute_op(machine::AbstractMachine, op::SetIndex) = setindex!(deref(machine, op
 
 eachvariable(machine::BasicBlockInterpreter) = eachvariable(machine.program)
 
-function derefvariables(machine::BasicBlockInterpreter)
-    result = Dict{Symbol, Any}()
-    for variable in eachvariable(machine)
-        result[variable.symbol] = deref(machine, variable)
-    end
-    return result
-end
+function return_values(machine::BasicBlockInterpreter)
+    out_vars = output_variables(machine.program)
 
-namedtuple(d::Dict) = NamedTuple{Tuple(keys(d))}(values(d))
-return_values(machine::BasicBlockInterpreter) = namedtuple(derefvariables(machine))
+    if isempty(out_vars)
+        return nothing
+    elseif length(out_vars) == 1
+        return deref(machine, out_vars[1])
+    else
+        return Tuple( deref(machine, variable) for variable in output_variables(machine.program) )
+    end
+end

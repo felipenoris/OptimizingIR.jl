@@ -27,13 +27,21 @@ function build_function_body_expr(ir::BasicBlock)
 end
 
 function return_expr(bb::BasicBlock)
-    ret_expr = Expr(:tuple)
+    out_vars = output_variables(bb)
 
-    for (k, v) in bb.variables
-        push!(ret_expr.args, Expr(:(=), k.symbol, julia_expr(bb, v)))
+    if isempty(out_vars)
+        return :(return nothing)
+    elseif length(out_vars) == 1
+        return :(return $(julia_expr(bb, out_vars[1])))
+    else
+        ret_tuple = Expr(:tuple)
+
+        for v in out_vars
+            push!(ret_tuple.args, julia_expr(bb, v))
+        end
+
+        return Expr(:return, ret_tuple)
     end
-
-    return ret_expr
 end
 
 julia_expr(bb::BasicBlock, c::CallUnary) = Expr(:call, c.op, julia_expr(bb, c.arg))
