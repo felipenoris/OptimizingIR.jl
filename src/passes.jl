@@ -33,7 +33,11 @@ for fun in (:is_pure, :is_impure, :is_commutative, :has_identity_property, :has_
             @assert typeof(OPTRULE) <: OptimizationRule
             ($fun)(OPTRULE)
         end
+    end
+end
 
+for fun in (:is_commutative, :has_identity_property, :has_left_identity_property, :has_right_identity_property, :get_identity_element, :has_identity_element)
+    @eval begin
         function ($fun)(::Type{T}) where {OP, T<:AbstractOpCall{OP}}
             ($fun)(OP)
         end
@@ -43,6 +47,31 @@ for fun in (:is_pure, :is_impure, :is_commutative, :has_identity_property, :has_
         end
     end
 end
+
+# is_pure / is_impure for x, where x::T<:AbstractOpCall
+@generated function is_pure(call::CallUnary{OP, A}) where {OP,A}
+    is_pure(OP) && is_immutable(A)
+end
+
+@generated function is_pure(call::CallBinary{OP, A, B}) where {OP,A,B}
+    is_pure(OP) && is_immutable(A) && is_immutable(B)
+end
+
+@generated function is_pure(call::CallVararg{OP}) where {OP}
+    if is_pure(OP)
+        return quote
+            all(is_immutable(i) for i in call.args)
+        end
+    else
+        return false
+    end
+end
+
+is_impure(call::AbstractOpCall) = !is_pure(call)
+
+is_pure(::PureInstruction) = true
+is_pure(::ImpureInstruction) = false
+is_impure(i::LinearInstruction) = !is_pure(i)
 
 #
 # Commutative ops

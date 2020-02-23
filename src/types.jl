@@ -9,8 +9,8 @@ end
 
 abstract type AbstractValue{M<:Mutability} end
 
-abstract type MutableValue <: AbstractValue{Mutable} end
-abstract type ImmutableValue <: AbstractValue{Immutable} end
+const MutableValue = AbstractValue{Mutable}
+const ImmutableValue = AbstractValue{Immutable}
 
 @generated function is_mutable(::Type{T}) :: Bool where {M<:Mutability, T<:AbstractValue{M}}
     M == Mutable
@@ -55,8 +55,8 @@ struct Variable{M} <: AbstractValue{M}
     symbol::Symbol
 end
 
-MutableVariable(sym::Symbol) = Variable{Mutable}(sym)
-ImmutableVariable(sym::Symbol) = Variable{Immutable}(sym)
+const MutableVariable = Variable{Mutable}
+const ImmutableVariable = Variable{Immutable}
 
 """
 Sets which optimizations are
@@ -95,6 +95,12 @@ abstract type Instruction end
 abstract type LinearInstruction{T<:AbstractCall} <: Instruction end
 abstract type BranchInstruction <: Instruction end
 
+# lhs = rhs
+struct Assignment{V1<:Variable, V2<:ImmutableValue} <: AbstractCall
+    lhs::V1
+    rhs::V2
+end
+
 """
 A `PureInstruction` is a call to an operation
 that always returns the same value
@@ -108,7 +114,7 @@ struct PureInstruction{T} <: LinearInstruction{T}
 
     function PureInstruction(call::G) where {G<:AbstractOpCall}
         # An AbstractOpCall has on Op that is either pure or impure
-        @assert is_pure(call) "$G must be a pure call."
+        @assert is_pure(call) "Call is not pure ($call)."
         return new{G}(call)
     end
 
@@ -133,13 +139,17 @@ mutable struct ImpureInstruction{T} <: LinearInstruction{T}
 
     function ImpureInstruction(call::G) where {G<:AbstractOpCall}
         # An AbstractOpCall has on Op that is either pure or impure
-        @assert is_impure(G) "$G must be an impure call."
+        @assert is_impure(call) "Call is not impure ($call)."
         return new{G}(call)
     end
 
     function ImpureInstruction(call::G) where {G<:AbstractCall}
         # catch other AbstractCalls (GetIndex/SetIndex)
         return new{G}(call)
+    end
+
+    function ImpureInstruction(call::Assignment)
+        return new{Assignment}(call)
     end
 end
 
@@ -178,8 +188,9 @@ abstract type Program end
 
 mutable struct BasicBlock <: Program
     instructions::LookupTable{LinearInstruction}
-    inputs::LookupTable{Variable}
-    variables::Dict{Variable, ImmutableValue}
+    inputs::LookupTable{ImmutableVariable}
+    mutable_locals::LookupTable{MutableVariable}
+    immutable_locals::Dict{ImmutableVariable, ImmutableValue}
     outputs::LookupTable{Variable}
 #    branch::Union{Nothing, BranchInstruction}
 #    next::Union{Nothing, BasicBlock}

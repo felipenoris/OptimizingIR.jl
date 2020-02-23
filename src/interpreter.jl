@@ -3,10 +3,11 @@ struct BasicBlockInterpreter <: AbstractMachine
     program::BasicBlock
     memory::Vector{Any}
     input_values::Vector{Any}
+    runtime_bindings::Dict{MutableVariable, Any}
 
     function BasicBlockInterpreter(b::BasicBlock)
         #@assert !hasbranches(b) "BasicBlockInterpreter does not support branches"
-        return new(b, Vector{Any}(undef, required_memory_size(b)), Vector{Any}(undef, length(input_variables(b))))
+        return new(b, Vector{Any}(undef, required_memory_size(b)), Vector{Any}(undef, length(input_variables(b))), Dict{MutableVariable, Any}())
     end
 end
 
@@ -43,12 +44,13 @@ end
 
 deref(machine::AbstractMachine, arg::Const) = arg.val
 deref(machine::BasicBlockInterpreter, arg::SSAValue) = machine.memory[arg.address]
+deref(machine::BasicBlockInterpreter, arg::MutableVariable) = machine.runtime_bindings[arg]
 
-function deref(machine::BasicBlockInterpreter, arg::Variable)
+function deref(machine::BasicBlockInterpreter, arg::ImmutableVariable)
     if is_input(machine.program, arg)
         @inbounds machine.input_values[ inputindex(machine.program, arg) ]
     else
-        deref(machine, follow(machine.program, arg))
+        deref(machine, machine.program.immutable_locals[arg])
     end
 end
 
@@ -61,6 +63,19 @@ execute_op(machine::AbstractMachine, op::CallBinary) = op.op(deref(machine, op.a
 execute_op(machine::AbstractMachine, op::CallVararg) = op.op(deref(machine, op.args...)...)
 execute_op(machine::AbstractMachine, op::GetIndex) = getindex(deref(machine, op.array), deref(machine, op.index...)...)
 execute_op(machine::AbstractMachine, op::SetIndex) = setindex!(deref(machine, op.array), deref(machine, op.value), deref(machine, op.index...)...)
+
+function execute_op(machine::AbstractMachine, ::Assignment{V}) where {V<:ImmutableVariable}
+    # no-op
+    nothing
+end
+
+function execute_op(machine::AbstractMachine, assignment::Assignment{V}) where {V<:MutableVariable}
+    runtime_bind!(machine, assignment.lhs, deref(machine, assignment.rhs))
+end
+
+function runtime_bind!(machine::BasicBlockInterpreter, var::MutableVariable, val::Any)
+    machine.runtime_bindings[var] = val
+end
 
 eachvariable(machine::BasicBlockInterpreter) = eachvariable(machine.program)
 

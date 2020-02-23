@@ -18,7 +18,12 @@ function build_function_body_expr(ir::BasicBlock)
 
     itr = eachinstruction(ir)
     for (i, instruction) in enumerate(itr)
-        push!(block.args, Expr(:(=), tmpsym(i), julia_expr(ir, instruction)))
+
+        expr = julia_expr(ir, instruction)
+
+        if expr != nothing
+            push!(block.args, Expr(:(=), tmpsym(i), expr))
+        end
     end
 
     push!(block.args, return_expr(ir))
@@ -30,10 +35,18 @@ function return_expr(bb::BasicBlock)
     out_vars = output_variables(bb)
 
     if isempty(out_vars)
+
+        # function does not return values
         return :(return nothing)
+
     elseif length(out_vars) == 1
+
+        # function returns a single value
         return :(return $(julia_expr(bb, out_vars[1])))
+
     else
+
+        # function returns a tuple
         ret_tuple = Expr(:tuple)
 
         for v in out_vars
@@ -60,11 +73,22 @@ julia_expr(bb::BasicBlock, c::PureInstruction) = julia_expr(bb, c.call)
 julia_expr(bb::BasicBlock, constant::Const) = constant.val
 julia_expr(bb::BasicBlock, ssa::SSAValue) = tmpsym(ssa.address)
 
-function julia_expr(bb::BasicBlock, variable::Variable)
+function julia_expr(bb::BasicBlock, ::Assignment{V}) where {V<:ImmutableVariable}
+    # no-op
+    return nothing
+end
+
+function julia_expr(bb::BasicBlock, op::Assignment{V}) where {V<:MutableVariable}
+    Expr(:(=), op.lhs.symbol, julia_expr(bb, op.rhs))
+end
+
+julia_expr(bb::BasicBlock, variable::MutableVariable) = variable.symbol
+
+function julia_expr(bb::BasicBlock, variable::ImmutableVariable)
     if is_input(bb, variable)
         return variable.symbol
     else
-        return julia_expr(bb, follow(bb, variable))
+        return julia_expr(bb, bb.immutable_locals[variable])
     end
 end
 

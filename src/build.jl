@@ -1,10 +1,11 @@
 
 function BasicBlock()
     BasicBlock(
-        LookupTable{LinearInstruction}(),
-        LookupTable{Variable}(),
-        Dict{Variable, ImmutableValue}(),
-        LookupTable{Variable}()
+        LookupTable{LinearInstruction}(),          # instructions
+        LookupTable{ImmutableVariable}(),          # inputs
+        LookupTable{MutableVariable}(),            # mutable_locals
+        Dict{ImmutableVariable, ImmutableValue}(), # immutable_locals
+        LookupTable{Variable}()                    # outputs
     )
 end
 
@@ -13,7 +14,8 @@ output_variables(bb::BasicBlock) = bb.outputs
 constant(val) = Const(val)
 eachvariable(bb::BasicBlock) = keys(bb.variables)
 #hasbranches(bb::BasicBlock) = bb.branch != nothing || bb.next != nothing
-is_input(bb::BasicBlock, var::Variable) = var ∈ bb.inputs
+is_input(bb::BasicBlock, var::ImmutableVariable) = var ∈ bb.inputs
+is_input(bb::BasicBlock, var::MutableVariable) = false
 is_output(bb::BasicBlock, var::Variable) = var ∈ bb.outputs
 
 function Op(f::F;
@@ -29,19 +31,6 @@ end
 # defines functor for Op so that op(arg1, ...) will call op.op(arg1, ...)
 # see https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects-1
 (op::Op)(args...) = op.op(args...)
-
-"""
-    follow(program::Program, arg::AbstractValue) :: ImmutableValue
-
-Similar to deref, but returns the static address
-for which the argument is pointing to.
-"""
-function follow(program::BasicBlock, arg::Variable) :: ImmutableValue
-    @assert haskey(program.variables, arg) "Variable $arg was not defined."
-    return program.variables[arg]
-end
-
-follow(bb::BasicBlock, arg::SSAValue) = bb.instructions[arg.address]
 
 struct InstructionIterator{T}
     instructions::T
@@ -60,13 +49,7 @@ function addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: Immut
     return SSAValue(addentry!(b.instructions, instruction))
 end
 
-function bind!(b::BasicBlock, variable::Variable, value::ImmutableValue)
-    b.variables[variable] = value
-    nothing
-end
-
 inputindex(bb::BasicBlock, op::Variable) = indexof(bb.inputs, op)
-
 addinput!(b::BasicBlock, iv::Variable) = addentry!(b.inputs, iv)
 addoutput!(b::BasicBlock, iv::Variable) = addentry!(b.outputs, iv)
 
@@ -111,6 +94,19 @@ end
     end
 end
 
-function callsetindex(array::Variable{Mutable}, value::AbstractValue, index...) :: LinearInstruction
-    return ImpureInstruction(SetIndex(array, value, index))
+function callsetindex(array::MutableVariable, value::AbstractValue, index...) :: LinearInstruction
+    ImpureInstruction(SetIndex(array, value, index))
+end
+
+function assign!(bb::BasicBlock, lhs::ImmutableVariable, rhs::ImmutableValue)
+    @assert !haskey(bb.immutable_locals, lhs) "Cannot assign to immmutable variable `$lhs` twice."
+    bb.immutable_locals[lhs] = rhs
+    addentry!(bb.instructions, ImpureInstruction(Assignment(lhs, rhs)))
+    nothing
+end
+
+function assign!(bb::BasicBlock, lhs::MutableVariable, rhs::ImmutableValue)
+    addentry!(bb.mutable_locals, lhs)
+    addentry!(bb.instructions, ImpureInstruction(Assignment(lhs, rhs)))
+    nothing
 end

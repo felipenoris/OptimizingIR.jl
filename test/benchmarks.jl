@@ -3,28 +3,28 @@
 MBP
 [ Info: Benchmarks
 Compile Native:
-  0.000598 seconds (341 allocations: 23.134 KiB)
+  0.001158 seconds (341 allocations: 23.134 KiB)
 Compile BasicBlockInterpreter
-  0.000002 seconds (8 allocations: 496 bytes)
-Compilation Overhead: Native / BasicBlockInterpreter: 415.0x
+  0.000005 seconds (12 allocations: 1.109 KiB)
+Compilation Overhead: Native / BasicBlockInterpreter: 191.1x
 F Call Native 1st
-  0.026739 seconds (40.26 k allocations: 2.266 MiB)
+  0.024720 seconds (40.48 k allocations: 2.278 MiB)
 F Call Native 2nd
-  0.000006 seconds (8 allocations: 336 bytes)
+  0.000010 seconds (8 allocations: 336 bytes)
 F Call Interpreter 1st
-  0.036071 seconds (48.84 k allocations: 2.675 MiB)
+  0.037349 seconds (49.01 k allocations: 2.680 MiB)
 F Call Interpreter 2nd
-  0.000067 seconds (44 allocations: 1.609 KiB)
+  0.000034 seconds (44 allocations: 1.609 KiB)
 F Call Julia 1st
-  0.006767 seconds (12.46 k allocations: 720.179 KiB)
+  0.008205 seconds (12.46 k allocations: 720.179 KiB)
 F Call Julia 2nd
-  0.000003 seconds (8 allocations: 336 bytes)
-F Call Overhead: BasicBlockInterpreter / julia = 32.2x
-F Call Overhead: Native / julia = 1.4x
+  0.000004 seconds (8 allocations: 336 bytes)
+F Call Overhead: BasicBlockInterpreter / julia = 30.8x
+F Call Overhead: Native / julia = 1.2x
 [ Info: Compilation + F Call
-BasicBlockInterpreter: 37.3µs
-Native: 561.4µs
-Native / BasicBlockInterpreter = 15.0x
+BasicBlockInterpreter: 58.2µs
+Native: 752.7µs
+Native / BasicBlockInterpreter = 12.9x
 =#
 
 function benchmark_julia(x, y)
@@ -45,7 +45,7 @@ OIR.addinput!(bb, in2)
 
 argvec = OIR.addinstruction!(bb, OIR.call(op_zeros, OIR.constant(Float64), OIR.constant(3)))
 var_vec = OIR.MutableVariable(:v)
-OIR.bind!(bb, var_vec, argvec)
+OIR.assign!(bb, var_vec, argvec)
 
 OIR.addinstruction!(bb, OIR.callsetindex(var_vec, in1, OIR.constant(1)))
 OIR.addinstruction!(bb, OIR.callsetindex(var_vec, in2, OIR.constant(2)))
@@ -61,7 +61,7 @@ arg6 = OIR.addinstruction!(bb, OIR.call(op_mul, arg5, OIR.constant(2.0)))
 arg7 = OIR.addinstruction!(bb, OIR.call(op_div, arg6, OIR.constant(1.0)))
 
 var_result = OIR.ImmutableVariable(:result)
-OIR.bind!(bb, var_result, arg7)
+OIR.assign!(bb, var_result, arg7)
 
 OIR.addoutput!(bb, var_vec)
 OIR.addoutput!(bb, var_result)
