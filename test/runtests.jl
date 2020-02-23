@@ -95,7 +95,7 @@ end
         arg9 = OIR.addinstruction!(bb, OIR.call(op_sum, arg4, arg8))
         var_output = OIR.ImmutableVariable(:output)
         OIR.addoutput!(bb, var_output)
-        OIR.assign!(bb, var_output, arg9)
+        OIR.bind!(bb, var_output, arg9)
         @test length(bb.instructions) == 2
 
         # println(bb)
@@ -130,7 +130,7 @@ end
     arg7 = OIR.addinstruction!(bb, OIR.call(op_mul, arg6, arg5))
     var_output = OIR.ImmutableVariable(:output)
     OIR.addoutput!(bb, var_output)
-    OIR.assign!(bb, var_output, arg7)
+    OIR.bind!(bb, var_output, arg7)
     @test length(bb.instructions) == 3
 
     # println(bb)
@@ -149,19 +149,19 @@ end
     arg1 = OIR.constant(Float64)
     arg3 = OIR.addinstruction!(bb, OIR.call(op_zeros, arg1, var_x))
     var_vec = OIR.MutableVariable(:vec)
-    OIR.assign!(bb, var_vec, arg3)
+    OIR.bind!(bb, var_vec, arg3)
     arg4 = OIR.constant(1)
     arg_inspect = OIR.addinstruction!(bb, OIR.callgetindex(var_vec, arg4))
     var_inspect1 = OIR.ImmutableVariable(:inspect1)
-    OIR.assign!(bb, var_inspect1, arg_inspect)
+    OIR.bind!(bb, var_inspect1, arg_inspect)
     arg_input_value = OIR.constant(10)
     arg5 = OIR.addinstruction!(bb, OIR.callsetindex(var_vec, arg_input_value, arg4))
     arg_inspect = OIR.addinstruction!(bb, OIR.callgetindex(var_vec, arg4))
     var_inspect2 = OIR.ImmutableVariable(:inspect2)
-    OIR.assign!(bb, var_inspect2, arg_inspect)
+    OIR.bind!(bb, var_inspect2, arg_inspect)
     arg6 = OIR.addinstruction!(bb, OIR.call(op_mul, OIR.constant(2.0), arg_inspect))
     var_inspect3 = OIR.ImmutableVariable(:inspect3)
-    OIR.assign!(bb, var_inspect3, arg6)
+    OIR.bind!(bb, var_inspect3, arg6)
     arg7 = OIR.addinstruction!(bb, OIR.call(op_mul, OIR.constant(1.0), arg6))
     arg8 = OIR.addinstruction!(bb, OIR.call(op_mul, arg7, OIR.constant(1.0)))
     arg9 = OIR.addinstruction!(bb, OIR.call(op_sum, arg8, OIR.constant(0.0)))
@@ -169,7 +169,7 @@ end
     arg11 = OIR.addinstruction!(bb, OIR.call(op_sub, arg10, OIR.constant(0.0)))
     arg12 = OIR.addinstruction!(bb, OIR.call(op_div, arg11, OIR.constant(1.0)))
     var_inspect4 = OIR.ImmutableVariable(:inspect4)
-    OIR.assign!(bb, var_inspect4, arg12)
+    OIR.bind!(bb, var_inspect4, arg12)
     @test length(bb.instructions) == 5
 
     OIR.addoutput!(bb, var_vec)
@@ -227,7 +227,7 @@ end
     arg18 = OIR.addinstruction!(bb, OIR.call(op_mul, arg16, arg17))
     var_output = OIR.ImmutableVariable(:output)
     OIR.addoutput!(bb, var_output)
-    OIR.assign!(bb, var_output, arg18)
+    OIR.bind!(bb, var_output, arg18)
     @test length(bb.instructions) == 8
 
     # println(bb)
@@ -250,7 +250,7 @@ end
         arg_result = OIR.addinstruction!(bb, OIR.call(op_mul, last_instruction_ssavalue, arg_zero))
         var_output = OIR.ImmutableVariable(:output)
         OIR.addoutput!(bb, var_output)
-        OIR.assign!(bb, var_output, arg_result)
+        OIR.bind!(bb, var_output, arg_result)
 
         let
             f = OIR.compile(OIR.BasicBlockInterpreter, bb)
@@ -275,7 +275,7 @@ end
     out = OIR.addinstruction!(bb, OIR.call(op_foreign_fun, x, y, z))
     var_result = OIR.ImmutableVariable(:result)
     OIR.addoutput!(bb, var_result)
-    OIR.assign!(bb, var_result, out)
+    OIR.bind!(bb, var_result, out)
 
     # cannot be optimized to a constant since it depends on the inputs
     @test length(bb.instructions) == 1
@@ -302,7 +302,7 @@ end
         out = OIR.addinstruction!(bb, OIR.call(op_foreign_fun, x, y, z))
         var_result = OIR.ImmutableVariable(:result)
         OIR.addoutput!(bb, var_result)
-        OIR.assign!(bb, var_result, out)
+        OIR.bind!(bb, var_result, out)
         @test isa(out, OIR.Const)
 
         # println(bb)
@@ -325,14 +325,14 @@ end
     OIR.addinput!(bb, x)
     z = OIR.constant(1.0)
     var_cnst = OIR.ImmutableVariable(:cnst)
-    OIR.assign!(bb, var_cnst, z)
+    OIR.bind!(bb, var_cnst, z)
     var_slot = OIR.ImmutableVariable(:slot)
-    OIR.assign!(bb, var_slot, z)
+    OIR.bind!(bb, var_slot, z)
     out = OIR.addinstruction!(bb, OIR.call(op_sum, OIR.follow(bb, var_slot), x))
-    OIR.assign!(bb, var_slot, out)
+    OIR.bind!(bb, var_slot, out)
     out = OIR.addinstruction!(bb, OIR.call(op_sum, OIR.follow(bb, var_slot), x))
     var_output = OIR.ImmutableVariable(:output)
-    OIR.assign!(bb, var_output, out)
+    OIR.bind!(bb, var_output, out)
     @test length(bb.instructions) == 2
 
     OIR.addoutput!(bb, var_cnst)
@@ -376,7 +376,7 @@ end
     s1 = OIR.addinstruction!(bb, OIR.call(op_sum, arg1, arg2))
     s2 = OIR.addinstruction!(bb, OIR.call(op_sum, s1, arg3))
     var_result = OIR.ImmutableVariable(:result)
-    OIR.assign!(bb, var_result, s2)
+    OIR.bind!(bb, var_result, s2)
     OIR.addoutput!(bb, var_result)
 
     let
@@ -443,7 +443,7 @@ end
 @testset "CFG" begin
     cfg = OIR.CFG()
     bb = cfg.start
-    OIR.assign!(bb, OIR.Variable(:y), OIR.constant(0))
+    OIR.bind!(bb, OIR.Variable(:y), OIR.constant(0))
 end
 =#
 

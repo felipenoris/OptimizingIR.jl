@@ -60,7 +60,7 @@ function addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: Immut
     return SSAValue(addentry!(b.instructions, instruction))
 end
 
-function assign!(b::BasicBlock, variable::Variable, value::ImmutableValue)
+function bind!(b::BasicBlock, variable::Variable, value::ImmutableValue)
     b.variables[variable] = value
     nothing
 end

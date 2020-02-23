@@ -49,7 +49,7 @@ end
 
 """
 A variable that can be
-assigned with [`OptimizingIR.assign!`](@ref).
+binded to a value. See [`OptimizingIR.bind!`](@ref).
 """
 struct Variable{M} <: AbstractValue{M}
     symbol::Symbol

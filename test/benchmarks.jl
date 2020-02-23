@@ -45,7 +45,7 @@ OIR.addinput!(bb, in2)
 
 argvec = OIR.addinstruction!(bb, OIR.call(op_zeros, OIR.constant(Float64), OIR.constant(3)))
 var_vec = OIR.MutableVariable(:v)
-OIR.assign!(bb, var_vec, argvec)
+OIR.bind!(bb, var_vec, argvec)
 
 OIR.addinstruction!(bb, OIR.callsetindex(var_vec, in1, OIR.constant(1)))
 OIR.addinstruction!(bb, OIR.callsetindex(var_vec, in2, OIR.constant(2)))
@@ -61,7 +61,7 @@ arg6 = OIR.addinstruction!(bb, OIR.call(op_mul, arg5, OIR.constant(2.0)))
 arg7 = OIR.addinstruction!(bb, OIR.call(op_div, arg6, OIR.constant(1.0)))
 
 var_result = OIR.ImmutableVariable(:result)
-OIR.assign!(bb, var_result, arg7)
+OIR.bind!(bb, var_result, arg7)
 
 OIR.addoutput!(bb, var_vec)
 OIR.addoutput!(bb, var_result)
