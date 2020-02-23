@@ -390,6 +390,38 @@ end
     end
 end
 
+@testset "Mutate input" begin
+    bb = OIR.BasicBlock()
+    var_input = OIR.MutableVariable(:x)
+    OIR.addinput!(bb, var_input)
+    cnst_index = OIR.constant(1)
+    cnst_val = OIR.constant(2)
+    OIR.addinstruction!(bb, OIR.callsetindex(var_input, cnst_val, cnst_index))
+
+    let
+        f = OIR.compile(OIR.BasicBlockInterpreter, bb)
+        array = [10]
+        f(array)
+        @test array[1] == 2
+    end
+
+    let
+        f = OIR.compile(OIR.Native, bb)
+        array = [10]
+        f(array)
+        @test array[1] == 2
+    end
+
+    @testset "can't mutate immutable var" begin
+        bb = OIR.BasicBlock()
+        var_input = OIR.ImmutableVariable(:x)
+        OIR.addinput!(bb, var_input)
+        cnst_index = OIR.constant(1)
+        cnst_val = OIR.constant(2)
+        @test_throws MethodError OIR.addinstruction!(bb, OIR.callsetindex(var_input, cnst_val, cnst_index))
+    end
+end
+
 #=
 function fif(x)
    y = 0
