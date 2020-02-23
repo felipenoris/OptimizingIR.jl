@@ -8,10 +8,10 @@ using Test
 end
 
 foreign_fun(a, b, c) = a^3 + b^2 + c
-julia_basic_block_test_function(x::Vector) = (((-((10.0 * 2.0 + x[1]) / 1.0) + (x[1] + 10.0 * 2.0) + 1.0) * 1.0 / 2.0) + (0.0 * x[1]) + 1.0) * 1.0
+julia_basic_block_test_function(x::Number) = (((-((10.0 * 2.0 + x) / 1.0) + (x + 10.0 * 2.0) + 1.0) * 1.0 / 2.0) + (0.0 * x) + 1.0) * 1.0
 
-function julia_native_test_function(x::Vector)
-    result = x[1]^3 + x[2]^2 + x[3]
+function julia_native_test_function(x::Number, y::Number, z::Number)
+    result = x^3 + y^2 + z
     out = Dict{Symbol, Any}()
     out[:result] = result
     return OptimizingIR.namedtuple(out)
@@ -106,10 +106,10 @@ end
 
         input = 20.0
         finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)
-        @test finterpreter([input]).output ≈ 2 * (input^3 + 10^2 + 2)
+        @test finterpreter(input).output ≈ 2 * (input^3 + 10^2 + 2)
 
         fnative = OIR.compile(OIR.Native, bb)
-        @test fnative([input]).output ≈ 2 * (input^3 + 10^2 + 2)
+        @test fnative(input).output ≈ 2 * (input^3 + 10^2 + 2)
     end
 
     @testset "ImpureCall" begin
@@ -138,10 +138,10 @@ end
     # println(bb)
 
     finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)
-    @test finterpreter([[5.0, 6.0, 7.0]]).output ≈ 6.0 * 5.0 * 6.0
+    @test finterpreter([5.0, 6.0, 7.0]).output ≈ 6.0 * 5.0 * 6.0
 
     fnative = OIR.compile(OIR.Native, bb)
-    @test fnative([[5.0, 6.0, 7.0]]).output ≈ 6.0 * 5.0 * 6.0
+    @test fnative([5.0, 6.0, 7.0]).output ≈ 6.0 * 5.0 * 6.0
 end
 
 @testset "SetIndex" begin
@@ -172,11 +172,9 @@ end
 
     println(bb)
 
-    input_vector = [3]
-
     let
         finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)
-        result = finterpreter(input_vector)
+        result = finterpreter(3)
         @test result.inspect1 ≈ 0.0
         @test result.inspect2 ≈ 10.0
         @test isa(result.inspect2, Float64)
@@ -187,7 +185,7 @@ end
 
     let
         fnative = OIR.compile(OIR.Native, bb)
-        result = fnative(input_vector)
+        result = fnative(3)
         @test result.inspect1 ≈ 0.0
         @test result.inspect2 ≈ 10.0
         @test isa(result.inspect2, Float64)
@@ -225,17 +223,17 @@ end
     # println(bb)
 
     let
-        input_vector = [10.0]
+        input = 10.0
         f = OIR.compile(OIR.BasicBlockInterpreter, bb)
-        result = f(input_vector)
-        @test result.output ≈ julia_basic_block_test_function(input_vector)
+        result = f(input)
+        @test result.output ≈ julia_basic_block_test_function(input)
     end
 
     let
-        input_vector = [10.0]
+        input = 10.0
         f = OIR.compile(OIR.Native, bb)
-        result = f(input_vector)
-        @test result.output ≈ julia_basic_block_test_function(input_vector)
+        result = f(input)
+        @test result.output ≈ julia_basic_block_test_function(input)
     end
 
     @testset "Multiply by zero" begin
@@ -245,15 +243,13 @@ end
         OIR.assign!(bb, OIR.ImmutableVariable(:output), arg_result)
 
         let
-            input_vector = [10.0]
             f = OIR.compile(OIR.BasicBlockInterpreter, bb)
-            @test f(input_vector).output == 0.0
+            @test f(10.0).output == 0.0
         end
 
         let
-            input_vector = [10.0]
             f = OIR.compile(OIR.Native, bb)
-            @test f(input_vector).output == 0.0
+            @test f(10.0).output == 0.0
         end
     end
 end
@@ -274,16 +270,14 @@ end
 
     # println(bb)
 
-    input = Dict(OIR.ImmutableVariable(:z) => 10.0, OIR.ImmutableVariable(:y) => 20.0, OIR.ImmutableVariable(:x) => 30.0)
-
     let
         f = OIR.compile(OIR.BasicBlockInterpreter, bb)
-        @test f(input).result ≈ foreign_fun(30.0, 20.0, 10.0)
+        @test f(30.0, 20.0, 10.0).result ≈ foreign_fun(30.0, 20.0, 10.0)
     end
 
     let
         f = OIR.compile(OIR.Native, bb)
-        @test f(input).result ≈ foreign_fun(30.0, 20.0, 10.0)
+        @test f(30.0, 20.0, 10.0).result ≈ foreign_fun(30.0, 20.0, 10.0)
     end
 end
 
@@ -299,16 +293,14 @@ end
 
         # println(bb)
 
-        input = []
-
         let
             f = OIR.compile(OIR.BasicBlockInterpreter, bb)
-            @test f(input).result ≈ foreign_fun(30.0, 20.0, 10.0)
+            @test f().result ≈ foreign_fun(30.0, 20.0, 10.0)
         end
 
         let
             f = OIR.compile(OIR.Native, bb)
-            @test f(input).result ≈ foreign_fun(30.0, 20.0, 10.0)
+            @test f().result ≈ foreign_fun(30.0, 20.0, 10.0)
         end
     end
 end
@@ -330,7 +322,7 @@ end
 
     # println(bb)
 
-    input = [10.0]
+    input = 10.0
 
     let
         f = OIR.compile(OIR.BasicBlockInterpreter, bb)
@@ -364,16 +356,14 @@ end
     s2 = OIR.addinstruction!(bb, OIR.call(op_sum, s1, arg3))
     OIR.assign!(bb, OIR.ImmutableVariable(:result), s2)
 
-    input = [30.0, 20.0, 10.0]
-
     let
         finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)
-        @test finterpreter(input) == julia_native_test_function(input)
+        @test finterpreter(30.0, 20.0, 10.0) == julia_native_test_function(30.0, 20.0, 10.0)
     end
 
     let
         f = OIR.compile(OIR.Native, bb)
-        @test f(input) == julia_native_test_function(input)
+        @test f(30.0, 20.0, 10.0) == julia_native_test_function(30.0, 20.0, 10.0)
     end
 end
 

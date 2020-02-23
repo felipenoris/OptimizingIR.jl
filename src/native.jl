@@ -3,18 +3,12 @@ struct Native <: AbstractMachine
 end
 
 function compile(::Type{Native}, program::Program)
-    f = func(program)
-    input_syms = input_symbols(program)
-
-    return input -> begin
-        input_vector = create_input_vector(input_syms, input)
-        return f(input_vector)
-    end
+    return func(program)
 end
 
 # Based on Mike's IRTools.jl
 function func(ir::Program)
-    @eval @generated function $(gensym())(x)
+    @eval @generated function $(gensym())($([v.symbol for v in input_variables(ir)]...))
         return build_function_body_expr($ir)
     end
 end
@@ -62,7 +56,7 @@ julia_expr(bb::BasicBlock, ssa::SSAValue) = tmpsym(ssa.address)
 
 function julia_expr(bb::BasicBlock, variable::Variable)
     if is_input(bb, variable)
-        return Expr(:call, Base.getindex, :x, inputindex(bb, variable))
+        return variable.symbol
     else
         return julia_expr(bb, follow(bb, variable))
     end

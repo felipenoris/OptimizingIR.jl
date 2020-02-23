@@ -3,34 +3,34 @@
 MBP
 [ Info: Benchmarks
 Compile Native:
-  0.000647 seconds (338 allocations: 22.758 KiB)
+  0.000613 seconds (341 allocations: 23.134 KiB)
 Compile BasicBlockInterpreter
-  0.000006 seconds (6 allocations: 224 bytes)
-Compilation Overhead: Native / BasicBlockInterpreter: 291.5x
+  0.000002 seconds (6 allocations: 224 bytes)
+Compilation Overhead: Native / BasicBlockInterpreter: 505.3x
 F Call Native 1st
-  0.028092 seconds (48.17 k allocations: 2.647 MiB)
+  0.029208 seconds (43.46 k allocations: 2.439 MiB, 15.65% gc time)
 F Call Native 2nd
-  0.000005 seconds (9 allocations: 768 bytes)
+  0.000004 seconds (8 allocations: 336 bytes)
 F Call Interpreter 1st
-  0.063945 seconds (53.18 k allocations: 2.954 MiB, 6.68% gc time)
+  0.071207 seconds (114.03 k allocations: 6.101 MiB)
 F Call Interpreter 2nd
-  0.000042 seconds (55 allocations: 3.000 KiB)
+  0.000065 seconds (56 allocations: 2.703 KiB)
 F Call Julia 1st
-  0.007132 seconds (16.13 k allocations: 919.125 KiB)
+  0.007349 seconds (15.65 k allocations: 898.132 KiB)
 F Call Julia 2nd
-  0.000002 seconds (6 allocations: 304 bytes)
-F Call Overhead: BasicBlockInterpreter / julia = 22.5x
+  0.000004 seconds (8 allocations: 336 bytes)
+F Call Overhead: BasicBlockInterpreter / julia = 47.1x
 F Call Overhead: Native / julia = 1.3x
 [ Info: Compilation + F Call
-BasicBlockInterpreter: 60.9µs
-Native: 729.2µs
-Native / BasicBlockInterpreter = 12.0x
+BasicBlockInterpreter: 68.0µs
+Native: 589.4µs
+Native / BasicBlockInterpreter = 8.7x
 =#
 
-function benchmark_julia(x::Vector)
+function benchmark_julia(x, y)
     v = zeros(Float64, 3)
-    v[1] = x[1]
-    v[2] = x[2]
+    v[1] = x
+    v[2] = y
 
     result = (((-( v[1] - v[2])) + 1.0 ) * 2.0) / 1.0
 
@@ -75,34 +75,34 @@ compilation_el_native = @elapsed OIR.compile(OIR.Native, bb)
 compilation_el_interpreter = @elapsed OIR.compile(OIR.BasicBlockInterpreter, bb)
 println("Compilation Overhead: Native / BasicBlockInterpreter: $(round(compilation_el_native / compilation_el_interpreter, digits=1))x")
 
-input = [10.0, 20.0]
+input = (10.0, 20.0)
 
 println("F Call Native 1st")
-@time result_native = fnative(input)
+@time result_native = fnative(input...)
 
 println("F Call Native 2nd")
-@time result_native = fnative(input)
+@time result_native = fnative(input...)
 
 println("F Call Interpreter 1st")
-@time result_interpreter = finterpreter(input)
+@time result_interpreter = finterpreter(input...)
 
 println("F Call Interpreter 2nd")
-@time result_interpreter = finterpreter(input)
+@time result_interpreter = finterpreter(input...)
 
 println("F Call Julia 1st")
-@time result_julia = benchmark_julia(input)
+@time result_julia = benchmark_julia(input...)
 
 println("F Call Julia 2nd")
-@time result_julia = benchmark_julia(input)
+@time result_julia = benchmark_julia(input...)
 
 @test result_native.result == result_julia.result
 @test result_native.v == result_julia.v
 @test result_interpreter.result == result_julia.result
 @test result_interpreter.v == result_julia.v
 
-execution_el_interpreter = @elapsed finterpreter(input)
-execution_el_native = @elapsed fnative(input)
-execution_el_julia = @elapsed benchmark_julia(input)
+execution_el_interpreter = @elapsed finterpreter(input...)
+execution_el_native = @elapsed fnative(input...)
+execution_el_julia = @elapsed benchmark_julia(input...)
 println("F Call Overhead: BasicBlockInterpreter / julia = $(round(execution_el_interpreter / execution_el_julia, digits=1))x")
 println("F Call Overhead: Native / julia = $(round(execution_el_native / execution_el_julia, digits=1))x")
 

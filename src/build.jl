@@ -3,10 +3,12 @@ function BasicBlock()
     BasicBlock(
         LookupTable{LinearInstruction}(),
         LookupTable{Variable}(),
-        Dict{Variable, ImmutableValue}()
+        Dict{Variable, ImmutableValue}(),
+        LookupTable{Variable}()
     )
 end
 
+input_variables(bb::BasicBlock) = bb.inputs
 constant(val) = Const(val)
 eachvariable(bb::BasicBlock) = keys(bb.variables)
 #hasbranches(bb::BasicBlock) = bb.branch != nothing || bb.next != nothing
@@ -63,10 +65,8 @@ end
 
 inputindex(bb::BasicBlock, op::Variable) = indexof(bb.inputs, op)
 
-function addinput!(b::BasicBlock, iv::Variable)
-    addentry!(b.inputs, iv)
-    nothing
-end
+addinput!(b::BasicBlock, iv::Variable) = addentry!(b.inputs, iv)
+addoutput!(b::BasicBlock, iv::Variable) = addentry!(b.outputs, iv)
 
 @generated function call(op::Op, arg::A) :: LinearInstruction where {A<:AbstractValue}
     # a call is pure if the Op itself is pure and the argument is immutable

@@ -4,17 +4,18 @@ struct BasicBlockInterpreter{T} <: AbstractMachine
     memory::Vector{Any}
     input_values::Vector{T}
 
-    function BasicBlockInterpreter(b::BasicBlock, input_values::Vector{T}) where {T}
+    function BasicBlockInterpreter(b::BasicBlock, input_values::T) where {T<:Union{Tuple, NTuple}}
         #@assert !hasbranches(b) "BasicBlockInterpreter does not support branches"
         @assert length(input_values) == length(b.inputs) "Expected `input_values` with $(length(b.inputs)) elements. Got $(length(input_values))."
-        return new{T}(b, Vector{Any}(undef, required_memory_size(b)), input_values)
+        input_values_vec = collect(input_values)
+        return new{eltype(input_values_vec)}(b, Vector{Any}(undef, required_memory_size(b)), input_values_vec)
     end
 end
 
 function compile(::Type{T}, program::Program) where {T<:BasicBlockInterpreter}
-    return input -> begin
-        input_vector = create_input_vector(input_symbols(program), input)
-        machine = T(program, input_vector)
+    return (input...) -> begin
+        @assert length(input) == length(input_variables(program))
+        machine = T(program, input)
         run_program!(machine)
         return return_values(machine)
     end
@@ -66,18 +67,3 @@ end
 
 namedtuple(d::Dict) = NamedTuple{Tuple(keys(d))}(values(d))
 return_values(machine::BasicBlockInterpreter) = namedtuple(derefvariables(machine))
-
-function create_input_vector(input_symbols::LookupTable{Variable}, input_values::Dict{K,V}) where {K,V}
-    input_vector = Vector{V}(undef, length(input_symbols))
-    for (i, sym) in enumerate(input_symbols)
-        @inbounds input_vector[i] = input_values[sym]
-    end
-    return input_vector
-end
-
-function create_input_vector(input_symbols::LookupTable{Variable}, input_values::Vector)
-    @assert length(input_symbols) == length(input_values)
-    return deepcopy(input_values)
-end
-
-input_symbols(bb::BasicBlock) = bb.inputs

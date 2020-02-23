@@ -180,6 +180,7 @@ mutable struct BasicBlock <: Program
     instructions::LookupTable{LinearInstruction}
     inputs::LookupTable{Variable}
     variables::Dict{Variable, ImmutableValue}
+    outputs::LookupTable{Variable}
 #    branch::Union{Nothing, BranchInstruction}
 #    next::Union{Nothing, BasicBlock}
 #    cfg::Union{Nothing, Program}
