@@ -1,32 +1,37 @@
 
-struct BasicBlockInterpreter{T} <: AbstractMachine
+struct BasicBlockInterpreter <: AbstractMachine
     program::BasicBlock
     memory::Vector{Any}
-    input_values::Vector{T}
+    input_values::Vector{Any}
 
-    function BasicBlockInterpreter(b::BasicBlock, input_values::T) where {T<:Union{Tuple, NTuple}}
+    function BasicBlockInterpreter(b::BasicBlock)
         #@assert !hasbranches(b) "BasicBlockInterpreter does not support branches"
-        @assert length(input_values) == length(b.inputs) "Expected `input_values` with $(length(b.inputs)) elements. Got $(length(input_values))."
-        input_values_vec = collect(input_values)
-        return new{eltype(input_values_vec)}(b, Vector{Any}(undef, required_memory_size(b)), input_values_vec)
+        return new(b, Vector{Any}(undef, required_memory_size(b)), Vector{Any}(undef, length(input_variables(b))))
     end
 end
 
 function compile(::Type{T}, program::Program) where {T<:BasicBlockInterpreter}
-    return (input...) -> begin
-        @assert length(input) == length(input_variables(program))
-        machine = T(program, input)
-        run_program!(machine)
-        return return_values(machine)
-    end
+    return BasicBlockInterpreter(program)
 end
 
 required_memory_size(b::BasicBlock) = length(b.instructions)
 
-function run_program!(machine::BasicBlockInterpreter)
-    for (i, instruction) in enumerate(machine.program.instructions)
-        machine.memory[i] = execute_op(machine, instruction)
+function set_input!(machine::BasicBlockInterpreter, input)
+    @assert length(input) == length(machine.input_values)
+    for i in 1:length(machine.input_values)
+        @inbounds machine.input_values[i] = input[i]
     end
+    nothing
+end
+
+function (machine::BasicBlockInterpreter)(input...)
+    set_input!(machine, input)
+
+    for (i, instruction) in enumerate(machine.program.instructions)
+        @inbounds machine.memory[i] = execute_op(machine, instruction)
+    end
+
+    return return_values(machine)
 end
 
 function execute_op(machine::AbstractMachine, op::Const{T}) :: T where {T}

@@ -2,9 +2,7 @@
 struct Native <: AbstractMachine
 end
 
-function compile(::Type{Native}, program::Program)
-    return func(program)
-end
+compile(::Type{Native}, program::Program) = func(program)
 
 # Based on Mike's IRTools.jl
 function func(ir::Program)
