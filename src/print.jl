@@ -61,13 +61,3 @@ Base.show(io::IO, call::CallUnary) = print(io, "call($(call.op), $(call.arg))")
 Base.show(io::IO, call::CallVararg) = print(io, "call($(call.op), $(call.args))")
 Base.show(io::IO, op::Op) = print(io, "$(op.op)")
 Base.show(io::IO, op::Assignment) = print(io, "$(op.lhs) = $(op.rhs)")
-
-#=
-function Base.show(io::IO, call::ImpureCall)
-    iob = IOBuffer()
-    print(iob, call.instruction)
-    str = String(take!(iob))
-    str_new = replace(str, "call" => "callimpure")
-    print(io, str_new)
-end
-=#
