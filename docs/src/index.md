@@ -32,9 +32,7 @@ It should be useful if you ever find yourself programmatically building
 functions out of [Julia Expressions](https://docs.julialang.org/en/v1/manual/metaprogramming/#Expressions-and-evaluation-1)
 when translating from other high-level languages.
 
-# Case Study
-
-## Julia's compilation steps
+## Case Study: Julia's IR
 
 Let's start with a simple Julia function.
 
@@ -133,6 +131,8 @@ a few thousand nodes that should be sufficient if you had optimizations enabled.
 By using OptimizingIR you give the compiler sufficient information to perform early optimization
 passes as you build the IR.
 
+The following example builds the test function from the previous section using `OptimizingIR`.
+
 ```@example case_study
 import OptimizingIR
 const OIR = OptimizingIR
@@ -181,22 +181,22 @@ fnative = OIR.compile(OIR.Native, bb)
 println("fnative(10.0) = $( fnative(10.0) )")
 ```
 
-# Limitations
+## Limitations
 
 * Currently supports only Basic Blocks (no control flow).
 
 * Input variables (function arguments) must be Immutable.
 
-# Source Code
+## Source Code
 
 The source code for this package is hosted at
 [https://github.com/felipenoris/OptimizingIR.jl](https://github.com/felipenoris/OptimizingIR.jl).
 
-# License
+## License
 
 The source code for the package **OptimizingIR.jl** is licensed under
 the [MIT License](https://raw.githubusercontent.com/felipenoris/OptimizingIR.jl/master/LICENSE).
 
-# Alternative Packages
+## Alternative Packages
 
 * [IRTools.jl](https://github.com/MikeInnes/IRTools.jl)
