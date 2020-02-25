@@ -54,6 +54,15 @@ const op_zeros = OIR.Op(zeros)
 
     @test collect(table) == [10, 20]
     @test filter(i -> i > 10, table) == [20]
+
+    @testset "Vector constructor" begin
+        v = collect(1:3)
+        tb = OIR.LookupTable(v)
+
+        for (i, v) in enumerate(v)
+            @test OIR.indexof(tb, v) == i
+        end
+    end
 end
 
 @testset "OptimizationRule" begin

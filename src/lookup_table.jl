@@ -20,6 +20,16 @@ mutable struct LookupTable{T}
     end
 end
 
+function LookupTable(v::Vector{T}) where {T}
+    result = LookupTable{T}()
+
+    for i in v
+        addentry!(result, i)
+    end
+
+    return result
+end
+
 function Base.in(item::T, collection::LookupTable{T}) :: Bool where {T}
     return haskey(collection.index, item)
 end
