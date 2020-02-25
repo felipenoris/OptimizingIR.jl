@@ -7,6 +7,14 @@ end
 struct Immutable <: Mutability
 end
 
+"""
+    AbstractValue{M<:Mutability}
+
+A value can be marked as either Mutable or Immutable.
+
+An immutable value can be assigned only once.
+A mutable value can be assigned more than once.
+"""
 abstract type AbstractValue{M<:Mutability} end
 
 const MutableValue = AbstractValue{Mutable}
