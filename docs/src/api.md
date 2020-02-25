@@ -4,7 +4,16 @@
 ## Public API
 
 ```@docs
-OptimizingIR
+OptimizingIR.Op
+OptimizingIR.Variable
+OptimizingIR.call
+OptimizingIR.addinstruction!
+OptimizingIR.addinput!
+OptimizingIR.addoutput!
+OptimizingIR.callgetindex
+OptimizingIR.callsetindex
+OptimizingIR.assign!
+OptimizingIR.constant
 ```
 
 ## Internals
@@ -18,6 +27,5 @@ OptimizingIR.SSAValue
 OptimizingIR.try_on_add_instruction_passes
 OptimizingIR.LookupTable
 OptimizingIR.Const
-OptimizingIR.Variable
 OptimizingIR.OptimizationRule
 ```

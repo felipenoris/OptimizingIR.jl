@@ -168,13 +168,13 @@ end
 #
 
 """
-    try_on_add_instruction_passes(program, instruction) :: Union{Nothing, Address}
+    try_on_add_instruction_passes(program, instruction) :: Union{Nothing, ImmutableValue}
 
 Tries to apply all optimization passes available
 while running `addinstruction!`:
 
 ```julia
-function addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: Address
+function addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: ImmutableValue
 
     result = try_on_add_instruction_passes(b, instruction)
     if result != nothing

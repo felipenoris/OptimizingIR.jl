@@ -56,8 +56,17 @@ struct Const{T} <: ImmutableValue
 end
 
 """
-A variable that can be
-binded to a value. See [`OptimizingIR.bind!`](@ref).
+    Variable
+
+Creates a variable identified by a symbol
+that can be either mutable or immutable.
+
+# Examples
+
+```julia
+m = OptimizingIR.MutableVariable(:varmut) # a mutable variable
+im = OptimizingIR.ImmutableVariable(:varimut) # an immutable variable
+```
 """
 struct Variable{M} <: AbstractValue{M}
     symbol::Symbol

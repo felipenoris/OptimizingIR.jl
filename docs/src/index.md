@@ -1,12 +1,14 @@
 
 # OptimizingIR.jl
 
+```@raw html
 <blockquote><i>
 "Compilers<br>
 Keep on compilin'<br>
 Cause it won't be too long"<br></i>
 Wonder, S.
 </blockquote>
+```
 
 This package provides an [Intermediate Representation (IR)](https://en.wikipedia.org/wiki/Intermediate_representation)
 that you can use to build Julia functions at runtime.
@@ -19,15 +21,14 @@ Each approach has a trade-off:
 
 * interpreting the IR has no compilation step, but results in a slower execution time when running the function;
 
-* compiling the IR to machine code builds a Julia expression for the function body and
-goes through the Julia's JIT overhead, but the execution time is faster.
+* compiling the IR to machine code builds a Julia expression for the function body and goes through the Julia's JIT overhead, but the execution time is faster.
 
 Also, interpreting the IR lets the user inspect each step in the calculation.
 This is useful for implementing auto-generation of documentation on
 the calculation performed by the function.
 
 This package is not very useful if you can write your function by hand.
-It should be useful for you if you ever find yourself programmatically building
+It should be useful if you ever find yourself programmatically building
 functions out of [Julia Expressions](https://docs.julialang.org/en/v1/manual/metaprogramming/#Expressions-and-evaluation-1)
 when translating from other high-level languages.
 
@@ -38,11 +39,15 @@ when translating from other high-level languages.
 Let's start with a simple Julia function.
 
 ```@example case_study
-julia_basic_block_test_function(x::Number) = (((-((10.0 * 2.0 + x) / 1.0) + (x + 10.0 * 2.0) + 1.0) * 1.0 / 2.0) + (0.0 * x) + 1.0) * 1.0
+julia_basic_block_test_function(x::Number) = (
+    ((-((10.0 * 2.0 + x) / 1.0)
+    + (x + 10.0 * 2.0) + 1.0) * 1.0 / 2.0)
+    + (0.0 * x) + 1.0) * 1.0
+
 julia_basic_block_test_function(10.0)
 ```
 
-Inspecting Julia's lowered IR we can see that `%1` and `%5` are the same constants, and are not re-used in later instructions.
+Inspecting Julia's lowered IR we can see that `%1` and `%5` are the same constants, and are not reused in later instructions.
 
 ```julia
 julia> @code_lowered julia_basic_block_test_function(10.0)
@@ -138,6 +143,7 @@ const op_sub = OIR.Op(-, pure=true, hasrightidentity=true, identity_element=0)
 const op_mul = OIR.Op(*, pure=true, commutative=true, hasleftidentity=true, hasrightidentity=true, identity_element=1)
 const op_div = OIR.Op(/, pure=true, hasrightidentity=true, identity_element=1)
 
+# build the Julia function out of a Basic Block
 bb = OIR.BasicBlock()
 x = OIR.ImmutableVariable(:x)
 OIR.addinput!(bb, x)
@@ -174,3 +180,13 @@ println("finterpreter(10.0) = $( finterpreter(10.0) )")
 fnative = OIR.compile(OIR.Native, bb)
 println("fnative(10.0) = $( fnative(10.0) )")
 ```
+
+# Limitations
+
+* Currently supports only Basic Blocks (no control flow).
+
+* Input variables (function arguments) must be Immutable.
+
+# Alternative Packages
+
+* [IRTools.jl](https://github.com/MikeInnes/IRTools.jl)
