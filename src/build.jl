@@ -52,7 +52,7 @@ Defines a basic instruction with optimization annotations.
 A function is considered [pure](https://en.wikipedia.org/wiki/Pure_function)
 if its return value is the same for the same arguments, and has no side-effects.
 
-Operations marked as **pure** are suitable for [Value numbering](https://en.wikipedia.org/wiki/Value_numbering)
+Operations marked as **pure** are suitable for [Value-Numbering](https://en.wikipedia.org/wiki/Value_numbering)
 optimization.
 
 When marked as impure, all optimization passes are disabled.
@@ -96,7 +96,7 @@ eachinstruction(bb::BasicBlock) = InstructionIterator(bb.instructions)
 """
     addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: ImmutableValue
 
-Pushed an instruction to a basic block.
+Pushes an instruction to a basic block.
 Returns the value that represents the result
 after the execution of the instruction.
 """
@@ -132,6 +132,9 @@ addoutput!(b::BasicBlock, iv::Variable) = addentry!(b.outputs, iv)
 
 Creates an instruction as a call to operation `op`
 with arguments `args`.
+
+Internally, it returns either a [`OptimizingIR.PureInstruction`](@ref)
+or an [`OptimizingIR.ImpureInstruction`](@ref).
 """
 @generated function call(op::Op, arg::A) :: LinearInstruction where {A<:AbstractValue}
     # a call is pure if the Op itself is pure and the argument is immutable

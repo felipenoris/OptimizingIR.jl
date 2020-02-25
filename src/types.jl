@@ -56,7 +56,7 @@ struct Const{T} <: ImmutableValue
 end
 
 """
-    Variable
+    Variable{M<:Mutability}
 
 Creates a variable identified by a symbol
 that can be either mutable or immutable.
@@ -125,6 +125,10 @@ if the same arguments are passed to the instruction.
 It is suitable for memoization, in the sense that
 it can be optimized in the Value-Number algorithm
 inside a Basic Block.
+
+An instruction is considered pure if its `call`
+has an pure `Op` and all of its arguments
+are immutable.
 """
 struct PureInstruction{T} <: LinearInstruction{T}
     call::T
@@ -148,6 +152,10 @@ if the same arguments are passed to the instruction.
 It is not suitable for memoization,
 and the Value-Number optimization must be
 disabled for this call.
+
+An instruction is considered impure if its `call`
+has an impure `Op`, or if onde of its arguments
+is mutable.
 
 Marking as mutable avoids Value-Numbering for this call.
 """
