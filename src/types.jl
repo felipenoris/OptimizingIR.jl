@@ -235,5 +235,17 @@ end
 
 abstract type AbstractMachine end
 
-"compile(::Type{T}, program::Program) :: Function where {T<:AbstractMachine}"
+"""
+    compile(::Type{T}, program::Program) :: Function where {T<:AbstractMachine}
+
+Compiles the IR to a Julia function.
+
+```julia
+const OIR = OptimizingIR
+bb = OIR.BasicBlock()
+# (...) add instructions to basic block
+finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)
+fnative = OIR.compile(OIR.Native, bb)
+```
+"""
 function compile end

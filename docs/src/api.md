@@ -14,6 +14,7 @@ OptimizingIR.callgetindex
 OptimizingIR.callsetindex
 OptimizingIR.assign!
 OptimizingIR.constant
+OptimizingIR.compile
 ```
 
 ## Internals
@@ -22,7 +23,6 @@ OptimizingIR.constant
 OptimizingIR.AbstractValue
 OptimizingIR.PureInstruction
 OptimizingIR.ImpureInstruction
-OptimizingIR.compile
 OptimizingIR.SSAValue
 OptimizingIR.try_on_add_instruction_passes
 OptimizingIR.LookupTable
