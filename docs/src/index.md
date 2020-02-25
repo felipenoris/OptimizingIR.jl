@@ -47,7 +47,7 @@ julia_basic_block_test_function(x::Number) = (
 julia_basic_block_test_function(10.0)
 ```
 
-Inspecting Julia's lowered IR we can see that `%1` and `%5` are the same constants, and are not reused in later instructions.
+Inspecting Julia's lowered IR we can see that `%1` and `%5` are repeated instructions that compute the same constant value.
 
 ```julia
 julia> @code_lowered julia_basic_block_test_function(10.0)
