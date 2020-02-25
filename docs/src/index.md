@@ -187,6 +187,16 @@ println("fnative(10.0) = $( fnative(10.0) )")
 
 * Input variables (function arguments) must be Immutable.
 
+# Source Code
+
+The source code for this package is hosted at
+[https://github.com/felipenoris/OptimizingIR.jl](https://github.com/felipenoris/OptimizingIR.jl).
+
+# License
+
+The source code for the package **OptimizingIR.jl** is licensed under
+the [MIT License](https://raw.githubusercontent.com/felipenoris/OptimizingIR.jl/master/LICENSE).
+
 # Alternative Packages
 
 * [IRTools.jl](https://github.com/MikeInnes/IRTools.jl)
