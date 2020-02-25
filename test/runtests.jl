@@ -267,12 +267,14 @@ end
     x = OIR.ImmutableVariable(:x)
     y = OIR.ImmutableVariable(:y)
     z = OIR.ImmutableVariable(:z)
-    OIR.addinput!(bb, x)
-    OIR.addinput!(bb, y)
-    OIR.addinput!(bb, z)
+    @test OIR.addinput!(bb, x) == 1
+    @test OIR.addinput!(bb, y) == 2
+    @test OIR.addinput!(bb, z) == 3
+    @test OIR.addinput!(bb, OIR.ImmutableVariable(:y)) == 2
     out = OIR.addinstruction!(bb, OIR.call(op_foreign_fun, x, y, z))
     var_result = OIR.ImmutableVariable(:result)
-    OIR.addoutput!(bb, var_result)
+    @test OIR.addoutput!(bb, var_result) == 1
+    @test OIR.addoutput!(bb, OIR.ImmutableVariable(:result)) == 1
     OIR.assign!(bb, var_result, out)
 
     # cannot be optimized to a constant since it depends on the inputs
