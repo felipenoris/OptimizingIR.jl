@@ -3,28 +3,28 @@
 MBP
 [ Info: Benchmarks
 Compile Native:
-  0.001158 seconds (341 allocations: 23.134 KiB)
+  0.000618 seconds (341 allocations: 23.134 KiB)
 Compile BasicBlockInterpreter
-  0.000005 seconds (12 allocations: 1.109 KiB)
-Compilation Overhead: Native / BasicBlockInterpreter: 191.1x
+  0.000009 seconds (12 allocations: 1.109 KiB)
+Compilation Overhead: Native / BasicBlockInterpreter: 162.2x
 F Call Native 1st
-  0.024720 seconds (40.48 k allocations: 2.278 MiB)
+  0.030319 seconds (40.48 k allocations: 2.278 MiB, 13.94% gc time)
 F Call Native 2nd
-  0.000010 seconds (8 allocations: 336 bytes)
+  0.000007 seconds (8 allocations: 336 bytes)
 F Call Interpreter 1st
-  0.037349 seconds (49.01 k allocations: 2.680 MiB)
+  0.039228 seconds (48.97 k allocations: 2.676 MiB)
 F Call Interpreter 2nd
-  0.000034 seconds (44 allocations: 1.609 KiB)
+  0.000033 seconds (44 allocations: 1.609 KiB)
 F Call Julia 1st
-  0.008205 seconds (12.46 k allocations: 720.179 KiB)
+  0.005580 seconds (12.46 k allocations: 720.179 KiB)
 F Call Julia 2nd
-  0.000004 seconds (8 allocations: 336 bytes)
-F Call Overhead: BasicBlockInterpreter / julia = 30.8x
-F Call Overhead: Native / julia = 1.2x
+  0.000002 seconds (8 allocations: 336 bytes)
+F Call Overhead: BasicBlockInterpreter / julia = 50.0x
+F Call Overhead: Native / julia = 2.4x
 [ Info: Compilation + F Call
-BasicBlockInterpreter: 58.2µs
-Native: 752.7µs
-Native / BasicBlockInterpreter = 12.9x
+BasicBlockInterpreter: 76.8µs
+Native: 832.4µs
+Native / BasicBlockInterpreter = 10.8x
 =#
 
 function benchmark_julia(x, y)

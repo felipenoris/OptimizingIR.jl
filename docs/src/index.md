@@ -174,9 +174,18 @@ println(bb)
 
 From an IR, you can compile it to a function.
 
+Compiling with a `BasicBlockInterpreter` will return a function
+that is interpreted when called.
+
 ```@example case_study
 finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)
 println("finterpreter(10.0) = $( finterpreter(10.0) )")
+```
+
+Compiling with a `Native` will compile a new Julia function
+to machine code.
+
+```@example case_study
 fnative = OIR.compile(OIR.Native, bb)
 println("fnative(10.0) = $( fnative(10.0) )")
 ```

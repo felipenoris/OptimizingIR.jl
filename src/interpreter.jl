@@ -1,5 +1,5 @@
 
-struct BasicBlockInterpreter <: AbstractMachine
+mutable struct BasicBlockInterpreter <: AbstractMachine
     program::BasicBlock
     memory::Vector{Any}
     input_values::Vector{Any}
@@ -7,15 +7,12 @@ struct BasicBlockInterpreter <: AbstractMachine
 
     function BasicBlockInterpreter(b::BasicBlock)
         #@assert !hasbranches(b) "BasicBlockInterpreter does not support branches"
-        return new(b, Vector{Any}(undef, required_memory_size(b)), Vector{Any}(undef, length(input_variables(b))), Dict{MutableVariable, Any}())
+        required_memory_size = length(b.instructions)
+        return new(b, Vector{Any}(undef, required_memory_size), Vector{Any}(undef, length(input_variables(b))), Dict{MutableVariable, Any}())
     end
 end
 
-function compile(::Type{T}, program::Program) where {T<:BasicBlockInterpreter}
-    return BasicBlockInterpreter(program)
-end
-
-required_memory_size(b::BasicBlock) = length(b.instructions)
+compile(::Type{BasicBlockInterpreter}, program::Program) = BasicBlockInterpreter(program)
 
 function set_input!(machine::BasicBlockInterpreter, input)
     @assert length(input_variables(machine.program)) == length(machine.input_values)
@@ -28,6 +25,7 @@ function set_input!(machine::BasicBlockInterpreter, input)
     nothing
 end
 
+# `machine(args...)` will run the program
 function (machine::BasicBlockInterpreter)(input...)
     set_input!(machine, input)
 
@@ -38,11 +36,11 @@ function (machine::BasicBlockInterpreter)(input...)
     return return_values(machine)
 end
 
-function execute_op(machine::AbstractMachine, op::Const{T}) :: T where {T}
+function execute_op(machine::BasicBlockInterpreter, op::Const{T}) :: T where {T}
     return op.val
 end
 
-deref(machine::AbstractMachine, arg::Const) = arg.val
+deref(::BasicBlockInterpreter, arg::Const) = arg.val
 deref(machine::BasicBlockInterpreter, arg::SSAValue) = machine.memory[arg.address]
 deref(machine::BasicBlockInterpreter, arg::MutableVariable) = machine.runtime_bindings[arg]
 
@@ -54,22 +52,22 @@ function deref(machine::BasicBlockInterpreter, arg::ImmutableVariable)
     end
 end
 
-deref(machine::AbstractMachine, args::AbstractValue...) = map(ssa -> deref(machine, ssa), args)
+deref(machine::BasicBlockInterpreter, args::AbstractValue...) = map(ssa -> deref(machine, ssa), args)
 
-execute_op(machine::AbstractMachine, op::PureInstruction) = execute_op(machine, op.call)
-execute_op(machine::AbstractMachine, op::ImpureInstruction) = execute_op(machine, op.call)
-execute_op(machine::AbstractMachine, op::CallUnary) = op.op(deref(machine, op.arg))
-execute_op(machine::AbstractMachine, op::CallBinary) = op.op(deref(machine, op.arg1), deref(machine, op.arg2))
-execute_op(machine::AbstractMachine, op::CallVararg) = op.op(deref(machine, op.args...)...)
-execute_op(machine::AbstractMachine, op::GetIndex) = getindex(deref(machine, op.array), deref(machine, op.index...)...)
-execute_op(machine::AbstractMachine, op::SetIndex) = setindex!(deref(machine, op.array), deref(machine, op.value), deref(machine, op.index...)...)
+execute_op(machine::BasicBlockInterpreter, op::PureInstruction) = execute_op(machine, op.call)
+execute_op(machine::BasicBlockInterpreter, op::ImpureInstruction) = execute_op(machine, op.call)
+execute_op(machine::BasicBlockInterpreter, op::CallUnary) = op.op(deref(machine, op.arg))
+execute_op(machine::BasicBlockInterpreter, op::CallBinary) = op.op(deref(machine, op.arg1), deref(machine, op.arg2))
+execute_op(machine::BasicBlockInterpreter, op::CallVararg) = op.op(deref(machine, op.args...)...)
+execute_op(machine::BasicBlockInterpreter, op::GetIndex) = getindex(deref(machine, op.array), deref(machine, op.index...)...)
+execute_op(machine::BasicBlockInterpreter, op::SetIndex) = setindex!(deref(machine, op.array), deref(machine, op.value), deref(machine, op.index...)...)
 
-function execute_op(machine::AbstractMachine, ::Assignment{V}) where {V<:ImmutableVariable}
+function execute_op(::BasicBlockInterpreter, ::Assignment{V}) where {V<:ImmutableVariable}
     # no-op
     nothing
 end
 
-function execute_op(machine::AbstractMachine, assignment::Assignment{V}) where {V<:MutableVariable}
+function execute_op(machine::BasicBlockInterpreter, assignment::Assignment{V}) where {V<:MutableVariable}
     runtime_bind!(machine, assignment.lhs, deref(machine, assignment.rhs))
 end
 
