@@ -5,7 +5,7 @@
 [![travis][travis-img]][travis-url]
 [![codecov][codecov-img]][codecov-url]
 [![dev][docs-dev-img]][docs-dev-url]
-<!--[![stable][docs-stable-img]][docs-stable-url]-->
+[![stable][docs-stable-img]][docs-stable-url]
 
 [license-img]: http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square
 [travis-img]: https://img.shields.io/travis/felipenoris/OptimizingIR.jl/master.svg?logo=travis&label=Linux&style=flat-square

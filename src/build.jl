@@ -25,67 +25,6 @@ is_input(bb::BasicBlock, var::ImmutableVariable) = var ∈ bb.inputs
 is_input(bb::BasicBlock, var::MutableVariable) = false
 is_output(bb::BasicBlock, var::Variable) = var ∈ bb.outputs
 
-"""
-    Op(f::Function;
-            pure::Bool=false,
-            commutative::Bool=false,
-            hasleftidentity::Bool=false,
-            hasrightidentity::Bool=false,
-            identity_element::T=NULL_IDENTITY_ELEMENT)
-
-Defines a basic instruction with optimization annotations.
-
-# Arguments
-
-* `f` is a Julia function to be executed by the `Op`.
-
-* `pure`: marks the function as pure (`true`) or impure (`false`) .
-
-* `commutative`: marks the `Op` as commutative.
-
-* `hasleftidentity`: marks the `Op` as having an identity when operating from the left, which means that `f(I, v) = v`, where `I` is the `identity_element`.
-
-* `hasrightidentity`: marks the `Op` as having an identity when operating from the right, which means that `f(v, I) = v`, where `I` is the `identity_element`.
-
-# Purity
-
-A function is considered [pure](https://en.wikipedia.org/wiki/Pure_function)
-if its return value is the same for the same arguments, and has no side-effects.
-
-Operations marked as **pure** are suitable for [Value-Numbering](https://en.wikipedia.org/wiki/Value_numbering)
-optimization.
-
-When marked as impure, all optimization passes are disabled.
-
-# Examples
-
-```julia
-const op_sum = OIR.Op(+, pure=true, commutative=true, hasleftidentity=true, hasrightidentity=true, identity_element=0)
-const op_sub = OIR.Op(-, pure=true, hasrightidentity=true, identity_element=0)
-const op_mul = OIR.Op(*, pure=true, commutative=true, hasleftidentity=true, hasrightidentity=true, identity_element=1)
-const op_div = OIR.Op(/, pure=true, hasrightidentity=true, identity_element=1)
-const op_pow = OIR.Op(^, pure=true, hasrightidentity=true, identity_element=1)
-
-foreign_fun(a, b, c) = a^3 + b^2 + c
-const op_foreign_fun = OIR.Op(foreign_fun, pure=true)
-
-const op_zeros = OIR.Op(zeros)
-```
-"""
-function Op(f::F;
-            pure::Bool=false,
-            commutative::Bool=false,
-            hasleftidentity::Bool=false,
-            hasrightidentity::Bool=false,
-            identity_element::T=NULL_IDENTITY_ELEMENT) where {F<:Function, T}
-
-    return Op(f, OptimizationRule(pure, commutative, hasleftidentity, hasrightidentity, identity_element))
-end
-
-# defines functor for Op so that op(arg1, ...) will call op.op(arg1, ...)
-# see https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects-1
-(op::Op)(args...) = op.op(args...)
-
 struct InstructionIterator{T}
     instructions::T
 end
@@ -112,18 +51,19 @@ end
 
 inputindex(bb::BasicBlock, op::Variable) = indexof(bb.inputs, op)
 
-
 """
-    addinput!(b::BasicBlock, iv::ImmutableVariable)
+    addinput!(b::BasicBlock, iv::ImmutableVariable) :: Int
 
 Registers `iv` as an input variable of the function.
+Returns the index of this variable in the tuple of inputs (function arguments).
 """
 addinput!(b::BasicBlock, iv::ImmutableVariable) = addentry!(b.inputs, iv)
 
 """
-    addoutput!(b::BasicBlock, iv::Variable)
+    addoutput!(b::BasicBlock, iv::Variable) :: Int
 
 Registers `iv` as an output variable of the function.
+Returns the index of this variable in the tuple of returned values.
 """
 addoutput!(b::BasicBlock, iv::Variable) = addentry!(b.outputs, iv)
 
@@ -168,7 +108,8 @@ end
 """
     callgetindex(array, index...) :: LinearInstruction
 
-Creates an instruction that results in the value of `array` at `index`.
+Creates an instruction that calls `Base.getindex(array, index...)`
+when executed.
 """
 @generated function callgetindex(array::Variable, index...) :: LinearInstruction
     for a in index
@@ -185,7 +126,8 @@ end
 """
     callsetindex(array, value, index...) :: LinearInstruction
 
-Creates an instruction that sets `value` in `array` at `index`.
+Creates an instruction that calls `Base.setindex!(array, value, index...)`
+when executed.
 """
 function callsetindex(array::MutableVariable, value::AbstractValue, index...) :: LinearInstruction
     ImpureInstruction(SetIndex(array, value, index))

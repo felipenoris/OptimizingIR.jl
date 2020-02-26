@@ -66,7 +66,7 @@ CodeInfo(
 )
 ```
 
-The typed IR is better at constant propagation, but stil repeats a few operations.
+The typed IR is better at constant propagation, but still has 13 instructions.
 
 ```julia
 julia> @code_typed julia_basic_block_test_function(10.0)
@@ -91,7 +91,8 @@ Why is that, given that Julia should generate very efficient code?
 Well, nothing is wrong really. Julia just doesn't have enough information to
 optimize instructions in the early phase of the Julia IR.
 
-When the Julia compiler reaches the LLVM phase, it generates efficient code.
+When the Julia compiler reaches the LLVM phase, it generates efficient code,
+reducing the number of instructions to 8.
 
 ```julia
 julia> @code_llvm julia_basic_block_test_function(10.0)
@@ -190,9 +191,13 @@ fnative = OIR.compile(OIR.Native, bb)
 println("fnative(10.0) = $( fnative(10.0) )")
 ```
 
+## Requirements
+
+* Julia v1.0 or newer.
+
 ## Limitations
 
-* Currently supports only Basic Blocks (no control flow).
+* Currently supports Basic Blocks only (no control flow).
 
 * Input variables (function arguments) must be Immutable.
 
