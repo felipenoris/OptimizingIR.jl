@@ -1,4 +1,5 @@
 
+"Used to compile to a function that is interpreted when executed."
 mutable struct BasicBlockInterpreter <: AbstractMachine
     program::BasicBlock
     memory::Vector{Any}

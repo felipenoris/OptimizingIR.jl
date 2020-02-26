@@ -89,7 +89,7 @@ CodeInfo(
 
 Why is that, given that Julia should generate very efficient code?
 Well, nothing is wrong really. Julia just doesn't have enough information to
-optimize instructions in the early phase of the Julia IR.
+optimize instructions in the early phase of the Julia's IR.
 
 When the Julia compiler reaches the LLVM phase, it generates efficient code,
 reducing the number of instructions to 8.
@@ -175,15 +175,15 @@ println(bb)
 
 From an IR, you can compile it to a function.
 
-Compiling with a `BasicBlockInterpreter` will return a function
-that is interpreted when called.
+Compiling with [`OptimizingIR.BasicBlockInterpreter`](@ref) generates a function
+that is interpreted when it executes.
 
 ```@example case_study
 finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)
 println("finterpreter(10.0) = $( finterpreter(10.0) )")
 ```
 
-Compiling with a `Native` will compile a new Julia function
+Compiling with [`OptimizingIR.Native`](@ref) will compile a new Julia function
 to machine code.
 
 ```@example case_study

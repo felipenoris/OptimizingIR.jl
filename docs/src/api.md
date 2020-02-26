@@ -28,4 +28,6 @@ OptimizingIR.try_on_add_instruction_passes
 OptimizingIR.LookupTable
 OptimizingIR.Const
 OptimizingIR.OptimizationRule
+OptimizingIR.BasicBlockInterpreter
+OptimizingIR.Native
 ```

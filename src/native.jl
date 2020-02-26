@@ -1,4 +1,5 @@
 
+"Used to compile to a function to machine code."
 struct Native <: AbstractMachine
 end
 
