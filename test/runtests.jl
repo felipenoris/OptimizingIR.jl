@@ -215,7 +215,9 @@ end
 @testset "Basic Block" begin
     bb = OIR.BasicBlock()
     x = OIR.ImmutableVariable(:x)
+    @test !OIR.has_symbol(bb, :x)
     OIR.addinput!(bb, x)
+    @test OIR.has_symbol(bb, :x)
     arg1 = OIR.constant(10.0)
     arg2 = OIR.constant(2.0)
     arg3 = OIR.addinstruction!(bb, OIR.call(op_mul, arg1, arg2))
@@ -234,8 +236,10 @@ end
     arg16 = OIR.constant(1.0)
     arg17 = OIR.addinstruction!(bb, OIR.call(op_sum, arg16, arg15))
     arg18 = OIR.addinstruction!(bb, OIR.call(op_mul, arg16, arg17))
+    @test !OIR.has_symbol(bb, :output)
     var_output = OIR.MutableVariable(:output)
     OIR.addoutput!(bb, var_output)
+    @test OIR.has_symbol(bb, :output)
     OIR.assign!(bb, var_output, arg18)
     @test length(bb.instructions) == 9
 
@@ -366,6 +370,39 @@ end
         @test slot == 11.0
         @test output == 1.0 + 10.0 + 10.0
         @test cnst == 1.0
+    end
+end
+
+@testset "has_symbol" begin
+    @testset "input" begin
+        bb = OIR.BasicBlock()
+        @test !OIR.has_symbol(bb, :x)
+        OIR.addinput!(bb, OIR.ImmutableVariable(:x))
+        @test OIR.has_symbol(bb, :x)
+    end
+
+    @testset "locals" begin
+        bb = OIR.BasicBlock()
+        @test !OIR.has_symbol(bb, :x)
+        OIR.assign!(bb, OIR.ImmutableVariable(:x), OIR.constant(1.0))
+        @test OIR.has_symbol(bb, :x)
+        @test !OIR.has_symbol(bb, :y)
+        OIR.assign!(bb, OIR.MutableVariable(:y), OIR.constant(1.0))
+        @test OIR.has_symbol(bb, :y)
+    end
+
+    @testset "output mut" begin
+        bb = OIR.BasicBlock()
+        @test !OIR.has_symbol(bb, :z)
+        OIR.addoutput!(bb, OIR.MutableVariable(:z))
+        @test OIR.has_symbol(bb, :z)
+    end
+
+    @testset "output immut" begin
+        bb = OIR.BasicBlock()
+        @test !OIR.has_symbol(bb, :z)
+        OIR.addoutput!(bb, OIR.ImmutableVariable(:z))
+        @test OIR.has_symbol(bb, :z)
     end
 end
 

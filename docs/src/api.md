@@ -15,6 +15,7 @@ OptimizingIR.callsetindex
 OptimizingIR.assign!
 OptimizingIR.constant
 OptimizingIR.compile
+OptimizingIR.has_symbol
 ```
 
 ## Internals

@@ -19,7 +19,6 @@ Creates a constant value.
 """
 constant(val) = Const(val)
 
-eachvariable(bb::BasicBlock) = keys(bb.variables)
 #hasbranches(bb::BasicBlock) = bb.branch != nothing || bb.next != nothing
 is_input(bb::BasicBlock, var::ImmutableVariable) = var ∈ bb.inputs
 is_input(bb::BasicBlock, var::MutableVariable) = false
@@ -31,6 +30,22 @@ end
 Base.iterate(itr::InstructionIterator) = iterate(itr.instructions)
 Base.iterate(itr::InstructionIterator, state) = iterate(itr.instructions, state)
 eachinstruction(bb::BasicBlock) = InstructionIterator(bb.instructions)
+
+"""
+    has_symbol(bb::BasicBlock, sym::Symbol) :: Bool
+
+Returns `true` if there is any variable (input, local or output)
+defined that is identified by the symbol `sym`.
+"""
+function has_symbol(bb::BasicBlock, sym::Symbol) :: Bool
+    for itr in (bb.inputs, bb.mutable_locals, keys(bb.immutable_locals), bb.outputs)
+        if any(v -> v.symbol == sym, itr)
+            return true
+        end
+    end
+
+    return false
+end
 
 """
     addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: ImmutableValue
