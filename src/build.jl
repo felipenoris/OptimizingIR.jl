@@ -48,6 +48,24 @@ function has_symbol(bb::BasicBlock, sym::Symbol) :: Bool
 end
 
 """
+    generate_unique_variable_symbol(bb::BasicBlock) :: Symbol
+
+OptimizingIR's version of `Base.gensym`.
+
+Returns a new symbol for which [`OptimizingIR.has_symbol`](@ref)
+is `false`.
+"""
+function generate_unique_variable_symbol(bb::BasicBlock) :: Symbol
+    local new_sym::Symbol = gensym()
+
+    while has_symbol(bb, new_sym)
+        new_sym = gensym()
+    end
+
+    return new_sym
+end
+
+"""
     addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: ImmutableValue
 
 Pushes an instruction to a basic block.

@@ -406,6 +406,14 @@ end
     end
 end
 
+@testset "gensym" begin
+    bb = OIR.BasicBlock()
+    sym = OIR.generate_unique_variable_symbol(bb)
+    OIR.addinput!(bb, OIR.ImmutableVariable(sym))
+    new_sym = OIR.generate_unique_variable_symbol(bb)
+    @test new_sym != sym
+end
+
 @testset "Native" begin
     bb = OIR.BasicBlock()
     in1 = OIR.ImmutableVariable(:x)

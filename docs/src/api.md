@@ -16,6 +16,7 @@ OptimizingIR.assign!
 OptimizingIR.constant
 OptimizingIR.compile
 OptimizingIR.has_symbol
+OptimizingIR.generate_unique_variable_symbol
 ```
 
 ## Internals
