@@ -47,11 +47,11 @@ argvec = OIR.addinstruction!(bb, OIR.call(op_zeros, OIR.constant(Float64), OIR.c
 var_vec = OIR.MutableVariable(:v)
 OIR.assign!(bb, var_vec, argvec)
 
-OIR.addinstruction!(bb, OIR.callsetindex(var_vec, in1, OIR.constant(1)))
-OIR.addinstruction!(bb, OIR.callsetindex(var_vec, in2, OIR.constant(2)))
+OIR.addinstruction!(bb, OIR.call(op_setindex, var_vec, in1, OIR.constant(1)))
+OIR.addinstruction!(bb, OIR.call(op_setindex, var_vec, in2, OIR.constant(2)))
 
-arg1 = OIR.addinstruction!(bb, OIR.callgetindex(var_vec, OIR.constant(1)))
-arg2 = OIR.addinstruction!(bb, OIR.callgetindex(var_vec, OIR.constant(2)))
+arg1 = OIR.addinstruction!(bb, OIR.call(op_getindex, var_vec, OIR.constant(1)))
+arg2 = OIR.addinstruction!(bb, OIR.call(op_getindex, var_vec, OIR.constant(2)))
 
 # (((-( x[1] - x[2])) + 1.0 ) * 2.0) / 1.0
 arg3 = OIR.addinstruction!(bb, OIR.call(op_sub, arg1, arg2))

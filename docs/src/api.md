@@ -10,8 +10,6 @@ OptimizingIR.call
 OptimizingIR.addinstruction!
 OptimizingIR.addinput!
 OptimizingIR.addoutput!
-OptimizingIR.callgetindex
-OptimizingIR.callsetindex
 OptimizingIR.assign!
 OptimizingIR.constant
 OptimizingIR.compile

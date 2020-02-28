@@ -11,6 +11,11 @@ foreign_fun(a, b, c) = a^3 + b^2 + c
 julia_basic_block_test_function(x::Number) = (((-((10.0 * 2.0 + x) / 1.0) + (x + 10.0 * 2.0) + 1.0) * 1.0 / 2.0) + (0.0 * x) + 1.0) * 1.0
 julia_native_test_function(x::Number, y::Number, z::Number) = x^3 + y^2 + z
 
+function push_into_two_args(num::Integer, a::Vector, b::Vector)
+    push!(a, num)
+    push!(b, num)
+end
+
 const op_sum = OIR.Op(+, pure=true, commutative=true, hasleftidentity=true, hasrightidentity=true, identity_element=0)
 const op_sub = OIR.Op(-, pure=true, hasrightidentity=true, identity_element=0)
 const op_mul = OIR.Op(*, pure=true, commutative=true, hasleftidentity=true, hasrightidentity=true, identity_element=1)
@@ -18,6 +23,11 @@ const op_div = OIR.Op(/, pure=true, hasrightidentity=true, identity_element=1)
 const op_pow = OIR.Op(^, pure=true, hasrightidentity=true, identity_element=1)
 const op_foreign_fun = OIR.Op(foreign_fun, pure=true)
 const op_zeros = OIR.Op(zeros)
+
+const op_getindex = OIR.Op(Base.getindex, pure=true)
+const op_setindex = OIR.Op(Base.setindex!, pure=false, mutable_arg=1)
+
+const op_push_into_two_args = OIR.Op(push_into_two_args, mutable_arg=(2, 3))
 
 @testset "LookupTable" begin
     table = OIR.LookupTable{Int}()
@@ -132,10 +142,10 @@ end
     var_x = OIR.ImmutableVariable(:x)
     OIR.addinput!(bb, var_x)
     arg2 = OIR.constant(2)
-    arg3 = OIR.addinstruction!(bb, OIR.callgetindex(var_x, arg2)) # reads x[2]
+    arg3 = OIR.addinstruction!(bb, OIR.call(op_getindex, var_x, arg2)) # reads x[2]
     arg4 = OIR.constant(5.0)
     arg5 = OIR.addinstruction!(bb, OIR.call(op_mul, arg4, arg3))
-    arg6 = OIR.addinstruction!(bb, OIR.callgetindex(var_x, arg2)) # reads x[2]
+    arg6 = OIR.addinstruction!(bb, OIR.call(op_getindex, var_x, arg2)) # reads x[2]
     arg7 = OIR.addinstruction!(bb, OIR.call(op_mul, arg6, arg5))
     var_output = OIR.ImmutableVariable(:output)
     OIR.addoutput!(bb, var_output)
@@ -160,12 +170,12 @@ end
     var_vec = OIR.MutableVariable(:vec)
     OIR.assign!(bb, var_vec, arg3)
     arg4 = OIR.constant(1)
-    arg_inspect = OIR.addinstruction!(bb, OIR.callgetindex(var_vec, arg4))
+    arg_inspect = OIR.addinstruction!(bb, OIR.call(op_getindex, var_vec, arg4))
     var_inspect1 = OIR.ImmutableVariable(:inspect1)
     OIR.assign!(bb, var_inspect1, arg_inspect)
     arg_input_value = OIR.constant(10)
-    arg5 = OIR.addinstruction!(bb, OIR.callsetindex(var_vec, arg_input_value, arg4))
-    arg_inspect = OIR.addinstruction!(bb, OIR.callgetindex(var_vec, arg4))
+    arg5 = OIR.addinstruction!(bb, OIR.call(op_setindex, var_vec, arg_input_value, arg4))
+    arg_inspect = OIR.addinstruction!(bb, OIR.call(op_getindex, var_vec, arg4))
     var_inspect2 = OIR.ImmutableVariable(:inspect2)
     OIR.assign!(bb, var_inspect2, arg_inspect)
     arg6 = OIR.addinstruction!(bb, OIR.call(op_mul, OIR.constant(2.0), arg_inspect))
@@ -450,7 +460,12 @@ end
     OIR.addinput!(bb, var_input)
     cnst_index = OIR.constant(1)
     cnst_val = OIR.constant(2)
-    @test_throws MethodError OIR.addinstruction!(bb, OIR.callsetindex(var_input, cnst_val, cnst_index))
+    @test_throws AssertionError OIR.addinstruction!(bb, OIR.call(op_setindex, var_input, cnst_val, cnst_index))
+    @test_throws AssertionError OIR.addinstruction!(bb, OIR.call(op_push_into_two_args, cnst_val, cnst_val, cnst_val))
+
+    var_mutable_a = OIR.MutableVariable(:a)
+    var_mutable_b = OIR.MutableVariable(:b)
+    OIR.addinstruction!(bb, OIR.call(op_push_into_two_args, cnst_val, var_mutable_a, var_mutable_b))
 end
 
 #=

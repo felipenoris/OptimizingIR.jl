@@ -60,8 +60,6 @@ execute_op(machine::BasicBlockInterpreter, op::ImpureInstruction) = execute_op(m
 execute_op(machine::BasicBlockInterpreter, op::CallUnary) = op.op(deref(machine, op.arg))
 execute_op(machine::BasicBlockInterpreter, op::CallBinary) = op.op(deref(machine, op.arg1), deref(machine, op.arg2))
 execute_op(machine::BasicBlockInterpreter, op::CallVararg) = op.op(deref(machine, op.args...)...)
-execute_op(machine::BasicBlockInterpreter, op::GetIndex) = getindex(deref(machine, op.array), deref(machine, op.index...)...)
-execute_op(machine::BasicBlockInterpreter, op::SetIndex) = setindex!(deref(machine, op.array), deref(machine, op.value), deref(machine, op.index...)...)
 
 function execute_op(::BasicBlockInterpreter, ::Assignment{V}) where {V<:ImmutableVariable}
     # no-op

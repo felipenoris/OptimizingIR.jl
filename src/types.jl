@@ -79,21 +79,23 @@ const ImmutableVariable = Variable{Immutable}
 Sets which optimizations are
 allowed to an `Op`.
 """
-struct OptimizationRule{T}
+struct OptimizationRule{T, M<:Union{Integer, Tuple, NTuple, Nothing}}
     pure::Bool              # whether the Op itself is pure or impure
     commutative::Bool
     hasleftidentity::Bool   # [left=element] op      right
     hasrightidentity::Bool  #     left       op [right=element]
     identity_element::T
+    mutable_arg::M          # which function arguments are mutated (check if mutable)
 
     function OptimizationRule(pure::Bool, commutative::Bool,
-            hasleftidentity::Bool, hasrightidentity::Bool, identity_element::T) where {T}
+            hasleftidentity::Bool, hasrightidentity::Bool, identity_element::T,
+            mutable_arg::M) where {T, M}
 
         if commutative || hasleftidentity || hasrightidentity
             @assert pure "Can't apply commutative or identity optimization on impure op."
         end
 
-        new{T}(pure, commutative, hasleftidentity, hasrightidentity, identity_element)
+        new{T,M}(pure, commutative, hasleftidentity, hasrightidentity, identity_element, mutable_arg)
     end
 end
 
@@ -112,7 +114,8 @@ end
             commutative::Bool=false,
             hasleftidentity::Bool=false,
             hasrightidentity::Bool=false,
-            identity_element::T=NULL_IDENTITY_ELEMENT)
+            identity_element::T=NULL_IDENTITY_ELEMENT,
+            mutable_arg=nothing)
 
 Defines a basic instruction with optimization annotations.
 
@@ -127,6 +130,8 @@ Defines a basic instruction with optimization annotations.
 * `hasleftidentity`: marks the `Op` as having an identity when operating from the left, which means that `f(I, v) = v`, where `I` is the `identity_element`.
 
 * `hasrightidentity`: marks the `Op` as having an identity when operating from the right, which means that `f(v, I) = v`, where `I` is the `identity_element`.
+
+* `mutable_arg`: either `nothing`, or the index or tuple of indexes of the arguments that need to be mutable.
 
 # Purity
 
@@ -158,9 +163,10 @@ function Op(f::F;
             commutative::Bool=false,
             hasleftidentity::Bool=false,
             hasrightidentity::Bool=false,
-            identity_element::T=NULL_IDENTITY_ELEMENT) where {F<:Function, T}
+            identity_element::T=NULL_IDENTITY_ELEMENT,
+            mutable_arg=nothing) where {F<:Function, T}
 
-    return Op(f, OptimizationRule(pure, commutative, hasleftidentity, hasrightidentity, identity_element))
+    return Op(f, OptimizationRule(pure, commutative, hasleftidentity, hasrightidentity, identity_element, mutable_arg))
 end
 
 # defines functor for Op so that op(arg1, ...) will call op.op(arg1, ...)

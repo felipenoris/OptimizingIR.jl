@@ -100,6 +100,34 @@ Returns the index of this variable in the tuple of returned values.
 """
 addoutput!(b::BasicBlock, iv::Variable) = addentry!(b.outputs, iv)
 
+function optimization_rule(::Type{Op{F, O}}) where {F, O}
+    O
+end
+
+function check_args_mutability(op, args...)
+
+    or = optimization_rule(op)
+
+    if or.mutable_arg == nothing
+        # no-op
+        return
+
+    elseif isa(or.mutable_arg, Integer)
+
+        @assert args[or.mutable_arg] <: MutableVariable "Expected MutableVariable at argument index $(or.mutable_arg), but found $(args[or.mutable_arg])."
+
+    elseif isa(or.mutable_arg, Tuple) || isa(or.mutable_arg, NTuple)
+
+        for arg in or.mutable_arg
+            @assert isa(arg, Integer) "mutable_arg element must be Integer."
+            @assert args[arg] <: MutableVariable "Expected MutableVariable at argument index $arg, but found $(args[arg])."
+        end
+
+    else
+        error("Unexpected mutable_arg type: $(or.mutable_arg)::$(typeof(or.mutable_arg))")
+    end
+end
+
 """
     call(op, args...) :: LinearInstruction
 
@@ -110,6 +138,9 @@ Internally, it returns either a [`OptimizingIR.PureInstruction`](@ref)
 or an [`OptimizingIR.ImpureInstruction`](@ref).
 """
 @generated function call(op::Op, arg::A) :: LinearInstruction where {A<:AbstractValue}
+
+    check_args_mutability(op, arg)
+
     # a call is pure if the Op itself is pure and the argument is immutable
     pure = is_pure(op) && is_immutable(A)
     wrapper_type = pure ? :PureInstruction : :ImpureInstruction
@@ -119,6 +150,9 @@ or an [`OptimizingIR.ImpureInstruction`](@ref).
 end
 
 @generated function call(op::Op, arg1::A, arg2::B) :: LinearInstruction where {A<:AbstractValue, B<:AbstractValue}
+
+    check_args_mutability(op, arg1, arg2)
+
     pure = is_pure(op) && is_immutable(arg1) && is_immutable(arg2)
     wrapper_type = pure ? :PureInstruction : :ImpureInstruction
     return quote
@@ -131,39 +165,13 @@ end
         @assert a <: AbstractValue
     end
 
+    check_args_mutability(op, args...)
+
     pure = is_pure(op) && all(is_immutable.(args))
     wrapper_type = pure ? :PureInstruction : :ImpureInstruction
     return quote
         $wrapper_type(CallVararg(op, args))
     end
-end
-
-"""
-    callgetindex(array, index...) :: LinearInstruction
-
-Creates an instruction that calls `Base.getindex(array, index...)`
-when executed.
-"""
-@generated function callgetindex(array::Variable, index...) :: LinearInstruction
-    for a in index
-        @assert a <: AbstractValue
-    end
-
-    pure = is_immutable(array) && all(is_immutable.(index))
-    wrapper_type = pure ? :PureInstruction : :ImpureInstruction
-    return quote
-        $wrapper_type(GetIndex(array, index))
-    end
-end
-
-"""
-    callsetindex(array, value, index...) :: LinearInstruction
-
-Creates an instruction that calls `Base.setindex!(array, value, index...)`
-when executed.
-"""
-function callsetindex(array::MutableVariable, value::AbstractValue, index...) :: LinearInstruction
-    ImpureInstruction(SetIndex(array, value, index))
 end
 
 """
