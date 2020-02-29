@@ -23,3 +23,17 @@ Keep on compilin'<br>
 Cause it won't be too long"<br></i>
 Wonder, S.
 </blockquote>
+
+## Installation
+
+From a Julia session, run:
+
+```julia
+julia> using Pkg
+
+julia> Pkg.add("OptimizingIR")
+```
+
+## Documentation
+
+Package documentation is hosted at https://felipenoris.github.io/OptimizingIR.jl/stable/.

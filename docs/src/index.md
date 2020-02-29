@@ -32,6 +32,20 @@ It should be useful if you ever find yourself programmatically building
 functions out of [Julia Expressions](https://docs.julialang.org/en/v1/manual/metaprogramming/#Expressions-and-evaluation-1)
 when translating from other high-level languages.
 
+## Requirements
+
+* Julia v1.0 or newer.
+
+## Installation
+
+From a Julia session, run:
+
+```julia
+julia> using Pkg
+
+julia> Pkg.add("OptimizingIR")
+```
+
 ## Case Study: Julia's IR
 
 Let's start with a simple Julia function.
@@ -190,10 +204,6 @@ to machine code.
 fnative = OIR.compile(OIR.Native, bb)
 println("fnative(10.0) = $( fnative(10.0) )")
 ```
-
-## Requirements
-
-* Julia v1.0 or newer.
 
 ## Limitations
 
