@@ -78,6 +78,15 @@ end
 @testset "OptimizationRule" begin
     @test OIR.is_pure(op_sum)
     @test !OIR.is_pure(op_zeros)
+    @test !OIR.is_impure(op_sum)
+    @test OIR.is_impure(op_zeros)
+    @test !OIR.has_left_identity_property(op_zeros)
+    @test OIR.has_left_identity_property(op_sum)
+    @test !OIR.has_right_identity_property(op_zeros)
+    @test OIR.has_right_identity_property(op_sum)
+    @test OIR.has_identity_property(op_sub)
+    @test !OIR.has_identity_property(op_zeros)
+    @test OIR.has_identity_element(op_sum)
 end
 
 @testset "AbstractValue" begin
