@@ -205,6 +205,73 @@ fnative = OIR.compile(OIR.Native, bb)
 println("fnative(10.0) = $( fnative(10.0) )")
 ```
 
+## World Age Problem
+
+When using [`OptimizingIR.Native`](@ref), if you compile a new function and
+call it before reaching global scope you may get a World Age Problem.
+
+As an example, consider the following code:
+
+```julia
+using OptimizingIR
+const OIR = OptimizingIR
+
+const OP_POW = OIR.Op(^, pure=true, hasrightidentity=true, identity_element=1)
+
+function gen_and_run()
+    bb = OIR.BasicBlock()
+    input_var = OIR.ImmutableVariable(:x)
+    OIR.addinput!(bb, input_var)
+    c2 = OIR.constant(2)
+    arg1 = OIR.addinstruction!(bb, OIR.call(OP_POW, input_var, c2))
+    var_result = OIR.ImmutableVariable(:result)
+    OIR.assign!(bb, var_result, arg1)
+    OIR.addoutput!(bb, var_result)
+
+    f = OIR.compile(OIR.Native, bb)
+    return f(2) # call the function before reaching global scope
+end
+```
+
+Calling `gen_and_run` yield an error.
+
+```julia
+julia> gen_and_run()
+ERROR: MethodError: no method matching ##371(::Int64)
+The applicable method may be too new: running in world age 26050, while current world is 26052.
+```
+
+You can Google for "julia world age problem" to get the details.
+One way to solve this is to use `Base.invokelatest` to call the function.
+
+```julia
+using OptimizingIR
+const OIR = OptimizingIR
+
+const OP_POW = OIR.Op(^, pure=true, hasrightidentity=true, identity_element=1)
+
+function gen_and_run()
+    bb = OIR.BasicBlock()
+    input_var = OIR.ImmutableVariable(:x)
+    OIR.addinput!(bb, input_var)
+    c2 = OIR.constant(2)
+    arg1 = OIR.addinstruction!(bb, OIR.call(OP_POW, input_var, c2))
+    var_result = OIR.ImmutableVariable(:result)
+    OIR.assign!(bb, var_result, arg1)
+    OIR.addoutput!(bb, var_result)
+
+    f = OIR.compile(OIR.Native, bb)
+    return Base.invokelatest(f, 2) # using Base.invokelatest
+end
+```
+
+Running the fixed version of `gen_and_run` yield the expected result.
+
+```julia
+julia> gen_and_run()
+4
+```
+
 ## Limitations
 
 * Currently supports Basic Blocks only (no control flow).

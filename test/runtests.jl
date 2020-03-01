@@ -463,6 +463,25 @@ end
     end
 end
 
+@testset "World Age Problem" begin
+
+    function gen_and_run()
+        bb = OIR.BasicBlock()
+        input_var = OIR.ImmutableVariable(:x)
+        OIR.addinput!(bb, input_var)
+        c2 = OIR.constant(2)
+        arg1 = OIR.addinstruction!(bb, OIR.call(op_pow, input_var, c2))
+        var_result = OIR.ImmutableVariable(:result)
+        OIR.assign!(bb, var_result, arg1)
+        OIR.addoutput!(bb, var_result)
+
+        f = OIR.compile(OIR.Native, bb)
+        @test Base.invokelatest(f, 2) == 4
+    end
+
+    gen_and_run()
+end
+
 @testset "can't mutate input" begin
     bb = OIR.BasicBlock()
     var_input = OIR.ImmutableVariable(:x)
