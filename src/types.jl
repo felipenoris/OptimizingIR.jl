@@ -61,6 +61,15 @@ end
 Creates a variable identified by a symbol
 that can be either mutable or immutable.
 
+# Alias
+
+For convenience, the following constants are defined in the package:
+
+```julia
+const MutableVariable = Variable{Mutable}
+const ImmutableVariable = Variable{Immutable}
+```
+
 # Examples
 
 ```julia
