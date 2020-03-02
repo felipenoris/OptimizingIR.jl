@@ -77,9 +77,12 @@ is_impure(i::LinearInstruction) = !is_pure(i)
 # Commutative ops
 #
 
-function commute(instruction::CallBinary{OP}) where {OP}
+@generated function commute(instruction::CallBinary{OP}) where {OP}
     @assert is_commutative(OP) "$OP is not commutative."
-    return call(instruction.op, instruction.arg2, instruction.arg1)
+
+    return quote
+        call(instruction.op, instruction.arg2, instruction.arg1)
+    end
 end
 
 #
@@ -95,21 +98,15 @@ const FAILED_OPTIMIZATION_PASS = OptimizationPassResult(false, NullPointer())
 
 try_constant_propagation(b::BasicBlock, instruction) = FAILED_OPTIMIZATION_PASS
 
-function try_constant_propagation(b::BasicBlock, instruction::CallUnary)
+function try_constant_propagation(b::BasicBlock, instruction::CallUnary{OP, C}) where {OP, C<:Const}
     arg = instruction.arg
-    if isa(arg, Const)
-        return OptimizationPassResult(true, Const(instruction.op(arg.val)))
-    end
-    return FAILED_OPTIMIZATION_PASS
+    return OptimizationPassResult(true, Const(instruction.op(arg.val)))
 end
 
-function try_constant_propagation(b::BasicBlock, instruction::CallBinary)
+function try_constant_propagation(b::BasicBlock, instruction::CallBinary{OP, C1, C2}) where {OP, C1<:Const, C2<:Const}
     arg1 = instruction.arg1
     arg2 = instruction.arg2
-    if isa(arg1, Const) && isa(arg2, Const)
-        return OptimizationPassResult(true, Const(instruction.op(arg1.val, arg2.val)))
-    end
-    return FAILED_OPTIMIZATION_PASS
+    return OptimizationPassResult(true, Const(instruction.op(arg1.val, arg2.val)))
 end
 
 function try_constant_propagation(b::BasicBlock, instruction::CallVararg)
@@ -128,39 +125,49 @@ try_identity_element_pass(b::BasicBlock, instruction) = FAILED_OPTIMIZATION_PASS
 is_const_with_value(instruction, val) = false
 is_const_with_value(c::Const, val) = c.val == val
 
-function try_identity_element_pass(b::BasicBlock, instruction::CallBinary{OP}) where {OP}
+@generated function try_identity_element_pass(b::BasicBlock, instruction::CallBinary{OP}) where {OP}
 
     if has_identity_property(OP)
 
-        identity_element = get_identity_element(OP)
+        return quote
+            identity_element = get_identity_element(OP)
 
-        if has_right_identity_property(OP)
-            if is_const_with_value(instruction.arg2, identity_element)
-                return OptimizationPassResult(true, instruction.arg1)
+            if has_right_identity_property(OP)
+                if is_const_with_value(instruction.arg2, identity_element)
+                    return OptimizationPassResult(true, instruction.arg1)
+                end
             end
-        end
 
-        if has_left_identity_property(OP)
-            if is_const_with_value(instruction.arg1, identity_element)
-                return OptimizationPassResult(true, instruction.arg2)
+            if has_left_identity_property(OP)
+                if is_const_with_value(instruction.arg1, identity_element)
+                    return OptimizationPassResult(true, instruction.arg2)
+                end
             end
+
+            return FAILED_OPTIMIZATION_PASS
         end
+    else
+        return FAILED_OPTIMIZATION_PASS
     end
-
-    return FAILED_OPTIMIZATION_PASS
 end
 
 try_commutative_op(::Program, instruction) = FAILED_OPTIMIZATION_PASS
 
-function try_commutative_op(bb::BasicBlock, instruction::CallBinary{OP}) where {OP}
+@generated function try_commutative_op(bb::BasicBlock, instruction::CallBinary{OP}) where {OP}
     if is_commutative(OP)
-        commuted_instruction = commute(instruction)
-        if commuted_instruction ∈ bb.instructions
-            return OptimizationPassResult(true, SSAValue(indexof(bb.instructions, commuted_instruction)))
-        end
-    end
 
-    return FAILED_OPTIMIZATION_PASS
+        return quote
+            commuted_instruction = commute(instruction)
+
+            if commuted_instruction ∈ bb.instructions
+                return OptimizationPassResult(true, SSAValue(indexof(bb.instructions, commuted_instruction)))
+            end
+
+            return FAILED_OPTIMIZATION_PASS
+        end
+    else
+        return FAILED_OPTIMIZATION_PASS
+    end
 end
 
 #
