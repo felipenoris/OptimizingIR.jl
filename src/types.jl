@@ -146,16 +146,27 @@ When marked as impure, all optimization passes are disabled.
 # Examples
 
 ```julia
-const op_sum = OIR.Op(+, pure=true, commutative=true, hasleftidentity=true, hasrightidentity=true, identity_element=0)
-const op_sub = OIR.Op(-, pure=true, hasrightidentity=true, identity_element=0)
-const op_mul = OIR.Op(*, pure=true, commutative=true, hasleftidentity=true, hasrightidentity=true, identity_element=1)
-const op_div = OIR.Op(/, pure=true, hasrightidentity=true, identity_element=1)
-const op_pow = OIR.Op(^, pure=true, hasrightidentity=true, identity_element=1)
+# this Op allows using `+` as a pure, commutative function. Sets 0 as identity element.
+const OP_SUM = OIR.Op(+, pure=true, commutative=true, hasleftidentity=true, hasrightidentity=true, identity_element=0)
 
+# `-` as a pure function. Identity is zero but only `x - 0 = x` case is checked.
+const OP_SUB = OIR.Op(-, pure=true, hasrightidentity=true, identity_element=0)
+
+# `*` as pure commutative function. Sets 1 as identity element.
+const OP_MUL = OIR.Op(*, pure=true, commutative=true, hasleftidentity=true, hasrightidentity=true, identity_element=1)
+
+# `\\` as a pure function. Identity is checked to the right: `a / 1 = a`.
+const OP_DIV = OIR.Op(/, pure=true, hasrightidentity=true, identity_element=1)
+
+# power function
+const OP_POW = OIR.Op(^, pure=true, hasrightidentity=true, identity_element=1)
+
+# an Op that uses an arbitrary Julia function
 foreign_fun(a, b, c) = a^3 + b^2 + c
-const op_foreign_fun = OIR.Op(foreign_fun, pure=true)
+const OP_FOREIGN_FUN = OIR.Op(foreign_fun, pure=true)
 
-const op_zeros = OIR.Op(zeros)
+# An Op that is impure: every time we run `zeros` a different Array is returned.
+const OP_ZEROS = OIR.Op(zeros)
 ```
 """
 function Op(f::F;

@@ -146,7 +146,7 @@ end
     end
 end
 
-@testset "GetIndex" begin
+@testset "OP_GETINDEX" begin
     bb = OIR.BasicBlock()
     var_x = OIR.ImmutableVariable(:x)
     OIR.addinput!(bb, var_x)
@@ -170,7 +170,7 @@ end
     @test fnative([5.0, 6.0, 7.0]) ≈ 6.0 * 5.0 * 6.0
 end
 
-@testset "SetIndex" begin
+@testset "OP_SETINDEX" begin
     bb = OIR.BasicBlock()
     var_x = OIR.ImmutableVariable(:x)
     OIR.addinput!(bb, var_x)
