@@ -92,18 +92,3 @@ function julia_expr(bb::BasicBlock, variable::ImmutableVariable)
         return julia_expr(bb, bb.immutable_locals[variable])
     end
 end
-
-function julia_expr(bb::BasicBlock, op::GetIndex)
-    Expr(:call,
-        Base.getindex,
-        julia_expr(bb, op.array),
-        map(i -> julia_expr(bb, i), op.index)...)
-end
-
-function julia_expr(bb::BasicBlock, op::SetIndex)
-    Expr(:call,
-        Base.setindex!,
-        julia_expr(bb, op.array),
-        julia_expr(bb, op.value),
-        map(i -> julia_expr(bb, i), op.index)...)
-end

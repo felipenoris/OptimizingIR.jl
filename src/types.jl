@@ -261,21 +261,6 @@ struct CallVararg{OP, N} <: AbstractOpCall{OP}
     args::NTuple{N, AbstractValue}
 end
 
-struct GetIndex{N, A<:Variable} <: AbstractCall
-    array::A
-    index::NTuple{N, AbstractValue}
-end
-
-GetIndex(array::Variable, index::AbstractValue...) = GetIndex(array, index)
-
-struct SetIndex{N, A<:AbstractValue} <: AbstractCall
-    array::Variable{Mutable}
-    value::A
-    index::NTuple{N, AbstractValue}
-end
-
-SetIndex(array::Variable{Mutable}, value::AbstractValue, index::AbstractValue...) = SetIndex(array, value, index)
-
 abstract type Program end
 
 mutable struct BasicBlock <: Program
