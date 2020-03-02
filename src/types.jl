@@ -155,7 +155,7 @@ const OP_SUB = OIR.Op(-, pure=true, hasrightidentity=true, identity_element=0)
 # `*` as pure commutative function. Sets 1 as identity element.
 const OP_MUL = OIR.Op(*, pure=true, commutative=true, hasleftidentity=true, hasrightidentity=true, identity_element=1)
 
-# `\\` as a pure function. Identity is checked to the right: `a / 1 = a`.
+# `/` as a pure function. Identity is checked to the right: `a / 1 = a`.
 const OP_DIV = OIR.Op(/, pure=true, hasrightidentity=true, identity_element=1)
 
 # power function
