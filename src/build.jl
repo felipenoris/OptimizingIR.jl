@@ -162,7 +162,7 @@ end
 
 @generated function call(op::Op, args...) :: LinearInstruction
     for a in args
-        @assert a <: AbstractValue "Found argument $(a) <: $(typeof(a)) that is not an AbstractValue."
+        @assert a <: AbstractValue "Found argument of type $(a) that is not an AbstractValue."
     end
 
     check_args_mutability(op, args...)
