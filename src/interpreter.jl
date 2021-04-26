@@ -1,7 +1,31 @@
 
+"""
+A CompiledBasicBlock mirrors BasicBlock
+but the instructions LookupTable is replaced
+with Vector to save memory.
+"""
+struct CompiledBasicBlock <: Program
+    instructions::Vector{LinearInstruction}
+    inputs::LookupTable{ImmutableVariable}
+    mutable_locals::LookupTable{MutableVariable}
+    immutable_locals::Dict{ImmutableVariable, ImmutableValue}
+    outputs::LookupTable{Variable}
+end
+
+function CompiledBasicBlock(b::BasicBlock)
+    return CompiledBasicBlock(b.instructions.entries, b.inputs, b.mutable_locals, b.immutable_locals, b.outputs)
+end
+
+input_variables(bb::CompiledBasicBlock) = bb.inputs
+output_variables(bb::CompiledBasicBlock) = bb.outputs
+is_input(bb::CompiledBasicBlock, var::ImmutableVariable) = var ∈ bb.inputs
+is_input(bb::CompiledBasicBlock, var::MutableVariable) = false
+is_output(bb::CompiledBasicBlock, var::Variable) = var ∈ bb.outputs
+inputindex(bb::CompiledBasicBlock, op::Variable) = indexof(bb.inputs, op)
+
 "Used to compile to a function that is interpreted when executed."
 mutable struct BasicBlockInterpreter <: AbstractMachine
-    program::BasicBlock
+    program::CompiledBasicBlock
     memory::Vector{Any}
     input_values::Vector{Any}
     runtime_bindings::Dict{MutableVariable, Any}
@@ -9,7 +33,7 @@ mutable struct BasicBlockInterpreter <: AbstractMachine
     function BasicBlockInterpreter(b::BasicBlock)
         #@assert !hasbranches(b) "BasicBlockInterpreter does not support branches"
         required_memory_size = length(b.instructions)
-        return new(b, Vector{Any}(undef, required_memory_size), Vector{Any}(undef, length(input_variables(b))), Dict{MutableVariable, Any}())
+        return new(CompiledBasicBlock(b), Vector{Any}(undef, required_memory_size), Vector{Any}(undef, length(input_variables(b))), Dict{MutableVariable, Any}())
     end
 end
 
