@@ -75,6 +75,10 @@ function BasicBlockInterpreter(b::BasicBlock)
     return BasicBlockInterpreter(b, Vector{Any}(undef, required_memory_size(b)), Vector{Any}(undef, required_input_values_size(b)), auto_resize_buffers=false)
 end
 
+function BasicBlockInterpreter(b::CompiledBasicBlock)
+    return BasicBlockInterpreter(b, Vector{Any}(undef, required_memory_size(b)), Vector{Any}(undef, required_input_values_size(b)), auto_resize_buffers=false)
+end
+
 compile(::Type{BasicBlockInterpreter}, program::Program) = BasicBlockInterpreter(program)
 
 function set_input!(machine::BasicBlockInterpreter, input)
