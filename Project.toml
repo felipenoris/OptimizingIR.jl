@@ -1,7 +1,7 @@
 name = "OptimizingIR"
 uuid = "cc8fcbce-1519-41ac-a9d5-7b019a31028d"
 authors = ["Felipe Noronha <felipenoris@gmail.com>"]
-version = "0.2.3-dev"
+version = "0.2.3"
 
 [compat]
 julia = "1"
