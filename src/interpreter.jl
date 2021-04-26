@@ -35,10 +35,28 @@ mutable struct BasicBlockInterpreter <: AbstractMachine
     input_values::Vector{Any}
     runtime_bindings::Dict{MutableVariable, Any}
 
-    function BasicBlockInterpreter(program::CompiledBasicBlock, memory_buffer::Vector{Any}, input_values_buffer::Vector{Any})
+    function BasicBlockInterpreter(
+                program::CompiledBasicBlock,
+                memory_buffer::Vector{Any},
+                input_values_buffer::Vector{Any};
+                auto_resize_buffers::Bool=true
+            )
+
         #@assert !hasbranches(b) "BasicBlockInterpreter does not support branches"
-        @assert length(memory_buffer) >= required_memory_size(program)
-        @assert length(input_values_buffer) >= required_input_values_size(program)
+
+        if auto_resize_buffers
+            if length(memory_buffer) < required_memory_size(program)
+                resize!(memory_buffer, required_memory_size(program))
+            end
+
+            if length(input_values_buffer) < required_input_values_size(program)
+                resize!(input_values_buffer, required_input_values_size(program))
+            end
+        else
+            @assert length(memory_buffer) >= required_memory_size(program)
+            @assert length(input_values_buffer) >= required_input_values_size(program)
+        end
+
         return new(program, memory_buffer, input_values_buffer, Dict{MutableVariable, Any}())
     end
 end
