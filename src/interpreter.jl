@@ -16,12 +16,17 @@ function CompiledBasicBlock(b::BasicBlock)
     return CompiledBasicBlock(b.instructions.entries, b.inputs, b.mutable_locals, b.immutable_locals, b.outputs)
 end
 
-input_variables(bb::CompiledBasicBlock) = bb.inputs
-output_variables(bb::CompiledBasicBlock) = bb.outputs
-is_input(bb::CompiledBasicBlock, var::ImmutableVariable) = var ∈ bb.inputs
-is_input(bb::CompiledBasicBlock, var::MutableVariable) = false
-is_output(bb::CompiledBasicBlock, var::Variable) = var ∈ bb.outputs
-inputindex(bb::CompiledBasicBlock, op::Variable) = indexof(bb.inputs, op)
+@inline input_variables(bb::CompiledBasicBlock) = bb.inputs
+@inline output_variables(bb::CompiledBasicBlock) = bb.outputs
+@inline is_input(bb::CompiledBasicBlock, var::ImmutableVariable) = var ∈ bb.inputs
+@inline is_input(bb::CompiledBasicBlock, var::MutableVariable) = false
+@inline is_output(bb::CompiledBasicBlock, var::Variable) = var ∈ bb.outputs
+@inline inputindex(bb::CompiledBasicBlock, op::Variable) = indexof(bb.inputs, op)
+
+@inline required_memory_size(program::CompiledBasicBlock) = length(program.instructions)
+@inline required_input_values_size(program::CompiledBasicBlock) = length(input_variables(program))
+@inline required_memory_size(program::BasicBlock) = length(program.instructions)
+@inline required_input_values_size(program::BasicBlock) = length(input_variables(program))
 
 "Used to compile to a function that is interpreted when executed."
 mutable struct BasicBlockInterpreter <: AbstractMachine
@@ -30,11 +35,20 @@ mutable struct BasicBlockInterpreter <: AbstractMachine
     input_values::Vector{Any}
     runtime_bindings::Dict{MutableVariable, Any}
 
-    function BasicBlockInterpreter(b::BasicBlock)
+    function BasicBlockInterpreter(program::CompiledBasicBlock, memory_buffer::Vector{Any}, input_values_buffer::Vector{Any})
         #@assert !hasbranches(b) "BasicBlockInterpreter does not support branches"
-        required_memory_size = length(b.instructions)
-        return new(CompiledBasicBlock(b), Vector{Any}(undef, required_memory_size), Vector{Any}(undef, length(input_variables(b))), Dict{MutableVariable, Any}())
+        @assert length(memory_buffer) >= required_memory_size(program)
+        @assert length(input_values_buffer) >= required_input_values_size(program)
+        return new(program, memory_buffer, input_values_buffer, Dict{MutableVariable, Any}())
     end
+end
+
+function BasicBlockInterpreter(b::BasicBlock, memory_buffer::Vector{Any}, input_values_buffer::Vector{Any})
+    return BasicBlockInterpreter(CompiledBasicBlock(b), memory_buffer, input_values_buffer)
+end
+
+function BasicBlockInterpreter(b::BasicBlock)
+    return BasicBlockInterpreter(b, Vector{Any}(undef, required_memory_size(b)), Vector{Any}(undef, required_input_values_size(b)))
 end
 
 compile(::Type{BasicBlockInterpreter}, program::Program) = BasicBlockInterpreter(program)
