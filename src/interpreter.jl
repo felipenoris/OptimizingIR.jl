@@ -61,12 +61,18 @@ mutable struct BasicBlockInterpreter <: AbstractMachine
     end
 end
 
-function BasicBlockInterpreter(b::BasicBlock, memory_buffer::Vector{Any}, input_values_buffer::Vector{Any})
-    return BasicBlockInterpreter(CompiledBasicBlock(b), memory_buffer, input_values_buffer)
+function BasicBlockInterpreter(
+            b::BasicBlock,
+            memory_buffer::Vector{Any},
+            input_values_buffer::Vector{Any};
+            auto_resize_buffers::Bool=true
+        )
+
+    return BasicBlockInterpreter(CompiledBasicBlock(b), memory_buffer, input_values_buffer, auto_resize_buffers=auto_resize_buffers)
 end
 
 function BasicBlockInterpreter(b::BasicBlock)
-    return BasicBlockInterpreter(b, Vector{Any}(undef, required_memory_size(b)), Vector{Any}(undef, required_input_values_size(b)))
+    return BasicBlockInterpreter(b, Vector{Any}(undef, required_memory_size(b)), Vector{Any}(undef, required_input_values_size(b)), auto_resize_buffers=false)
 end
 
 compile(::Type{BasicBlockInterpreter}, program::Program) = BasicBlockInterpreter(program)
