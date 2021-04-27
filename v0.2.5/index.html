@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Home · OptimizingIR.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">OptimizingIR.jl</span></div><form class="docs-search" action="search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>Home</a><ul class="internal"><li><a class="tocitem" href="#Requirements"><span>Requirements</span></a></li><li><a class="tocitem" href="#Installation"><span>Installation</span></a></li><li><a class="tocitem" href="#Case-Study:-Julia&#39;s-IR"><span>Case Study: Julia&#39;s IR</span></a></li><li><a class="tocitem" href="#Using-OptimizingIR"><span>Using OptimizingIR</span></a></li><li><a class="tocitem" href="#World-Age-Problem"><span>World Age Problem</span></a></li><li><a class="tocitem" href="#Limitations"><span>Limitations</span></a></li><li><a class="tocitem" href="#Source-Code"><span>Source Code</span></a></li><li><a class="tocitem" href="#License"><span>License</span></a></li><li><a class="tocitem" href="#Alternative-Packages"><span>Alternative Packages</span></a></li></ul></li><li><a class="tocitem" href="api/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Home</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Home</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/felipenoris/OptimizingIR.jl/blob/master/docs/src/index.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="OptimizingIR.jl"><a class="docs-heading-anchor" href="#OptimizingIR.jl">OptimizingIR.jl</a><a id="OptimizingIR.jl-1"></a><a class="docs-heading-anchor-permalink" href="#OptimizingIR.jl" title="Permalink"></a></h1><blockquote><i>
+"Compilers<br>
+Keep on compilin'<br>
+Cause it won't be too long"<br></i>
+Wonder, S.
+</blockquote><p>This package provides an <a href="https://en.wikipedia.org/wiki/Intermediate_representation">Intermediate Representation (IR)</a> that you can use to build Julia functions at runtime.</p><p>In this IR you can define operations with optimization annotations, so that the IR can run optimization passes in order to generate efficient code.</p><p>The IR can be either interpreted or compiled to machine code. Each approach has a trade-off:</p><ul><li><p>interpreting the IR has no compilation step, but results in a slower execution time when running the function;</p></li><li><p>compiling the IR to machine code builds a Julia expression for the function body and goes through the Julia&#39;s JIT overhead, but the execution time is faster.</p></li></ul><p>Also, interpreting the IR lets the user inspect each step in the calculation. This is useful for implementing auto-generation of documentation on the calculation performed by the function.</p><p>This package is not very useful if you can write your function by hand. It should be useful if you ever find yourself programmatically building functions out of <a href="https://docs.julialang.org/en/v1/manual/metaprogramming/#Expressions-and-evaluation-1">Julia Expressions</a> when translating from other high-level languages.</p><h2 id="Requirements"><a class="docs-heading-anchor" href="#Requirements">Requirements</a><a id="Requirements-1"></a><a class="docs-heading-anchor-permalink" href="#Requirements" title="Permalink"></a></h2><ul><li>Julia v1.0 or newer.</li></ul><h2 id="Installation"><a class="docs-heading-anchor" href="#Installation">Installation</a><a id="Installation-1"></a><a class="docs-heading-anchor-permalink" href="#Installation" title="Permalink"></a></h2><p>From a Julia session, run:</p><pre><code class="language-julia">julia&gt; using Pkg
+
+julia&gt; Pkg.add(&quot;OptimizingIR&quot;)</code></pre><h2 id="Case-Study:-Julia&#39;s-IR"><a class="docs-heading-anchor" href="#Case-Study:-Julia&#39;s-IR">Case Study: Julia&#39;s IR</a><a id="Case-Study:-Julia&#39;s-IR-1"></a><a class="docs-heading-anchor-permalink" href="#Case-Study:-Julia&#39;s-IR" title="Permalink"></a></h2><p>Let&#39;s start with a simple Julia function.</p><pre><code class="language-julia">julia_basic_block_test_function(x::Number) = (
+    ((-((10.0 * 2.0 + x) / 1.0)
+    + (x + 10.0 * 2.0) + 1.0) * 1.0 / 2.0)
+    + (0.0 * x) + 1.0) * 1.0
+
+julia_basic_block_test_function(10.0)</code></pre><pre class="documenter-example-output">1.5</pre><p>Inspecting Julia&#39;s lowered IR we can see that <code>%1</code> and <code>%5</code> are repeated instructions that compute the same constant value.</p><pre><code class="language-julia">julia&gt; @code_lowered julia_basic_block_test_function(10.0)
+CodeInfo(
+1 ─ %1  = 10.0 * 2.0
+│   %2  = %1 + x
+│   %3  = %2 / 1.0
+│   %4  = -%3
+│   %5  = 10.0 * 2.0
+│   %6  = x + %5
+│   %7  = %4 + %6 + 1.0
+│   %8  = %7 * 1.0
+│   %9  = %8 / 2.0
+│   %10 = 0.0 * x
+│   %11 = %9 + %10 + 1.0
+│   %12 = %11 * 1.0
+└──       return %12
+)</code></pre><p>The typed IR is better at constant propagation, but still has 13 instructions.</p><pre><code class="language-julia">julia&gt; @code_typed julia_basic_block_test_function(10.0)
+CodeInfo(
+1 ─ %1  = Base.add_float(20.0, x)::Float64
+│   %2  = Base.div_float(%1, 1.0)::Float64
+│   %3  = Base.neg_float(%2)::Float64
+│   %4  = Base.add_float(x, 20.0)::Float64
+│   %5  = Base.add_float(%3, %4)::Float64
+│   %6  = Base.add_float(%5, 1.0)::Float64
+│   %7  = Base.mul_float(%6, 1.0)::Float64
+│   %8  = Base.div_float(%7, 2.0)::Float64
+│   %9  = Base.mul_float(0.0, x)::Float64
+│   %10 = Base.add_float(%8, %9)::Float64
+│   %11 = Base.add_float(%10, 1.0)::Float64
+│   %12 = Base.mul_float(%11, 1.0)::Float64
+└──       return %12
+) =&gt; Float64</code></pre><p>Why is that, given that Julia should generate very efficient code? Well, nothing is wrong really. Julia just doesn&#39;t have enough information to optimize instructions in the early phase of the Julia&#39;s IR.</p><p>When the Julia compiler reaches the LLVM phase, it generates efficient code, reducing the number of instructions to 8.</p><pre><code class="language-julia">julia&gt; @code_llvm julia_basic_block_test_function(10.0)
+
+;  @ REPL[1]:1 within `julia_basic_block_test_function&#39;
+define double @julia_julia_basic_block_test_function_16035(double) {
+top:
+; ┌ @ float.jl:395 within `+&#39;
+   %1 = fadd double %0, 2.000000e+01
+; └
+; ┌ @ operators.jl:529 within `+&#39; @ float.jl:395
+   %2 = fsub double %1, %1
+   %3 = fadd double %2, 1.000000e+00
+; └
+; ┌ @ float.jl:401 within `/&#39;
+   %4 = fmul double %3, 5.000000e-01
+; └
+; ┌ @ float.jl:399 within `*&#39;
+   %5 = fmul double %0, 0.000000e+00
+; └
+; ┌ @ operators.jl:529 within `+&#39; @ float.jl:395
+   %6 = fadd double %5, %4
+   %7 = fadd double %6, 1.000000e+00
+; └
+  ret double %7
+}</code></pre><p><em>So, why bother using another IR?</em></p><p>Well, if you&#39;re programmatically building functions out of Julia Expressions, you may reach a billion nodes on a single Julia Expression instead of a few thousand nodes that should be sufficient if you had optimizations enabled.</p><h2 id="Using-OptimizingIR"><a class="docs-heading-anchor" href="#Using-OptimizingIR">Using OptimizingIR</a><a id="Using-OptimizingIR-1"></a><a class="docs-heading-anchor-permalink" href="#Using-OptimizingIR" title="Permalink"></a></h2><p>By using OptimizingIR you give the compiler sufficient information to perform early optimization passes as you build the IR.</p><p>The following example builds the test function from the previous section using <code>OptimizingIR</code>.</p><pre><code class="language-julia">import OptimizingIR
+const OIR = OptimizingIR
+
+# define op-codes with optimization annotations
+const OP_SUM = OIR.Op(+, pure=true, commutative=true, hasleftidentity=true, hasrightidentity=true, identity_element=0)
+const OP_SUB = OIR.Op(-, pure=true, hasrightidentity=true, identity_element=0)
+const OP_MUL = OIR.Op(*, pure=true, commutative=true, hasleftidentity=true, hasrightidentity=true, identity_element=1)
+const OP_DIV = OIR.Op(/, pure=true, hasrightidentity=true, identity_element=1)
+
+# build the Julia function out of a Basic Block
+bb = OIR.BasicBlock()
+x = OIR.ImmutableVariable(:x)
+OIR.addinput!(bb, x)
+arg1 = OIR.constant(10.0)
+arg2 = OIR.constant(2.0)
+arg3 = OIR.addinstruction!(bb, OIR.call(OP_MUL, arg1, arg2))
+arg4 = OIR.addinstruction!(bb, OIR.call(OP_SUM, arg3, x))
+arg5 = OIR.constant(1.0)
+arg6 = OIR.addinstruction!(bb, OIR.call(OP_DIV, arg4, arg5))
+arg7 = OIR.addinstruction!(bb, OIR.call(OP_SUB, arg6))
+arg8 = OIR.addinstruction!(bb, OIR.call(OP_SUM, x, arg3))
+arg9 = OIR.addinstruction!(bb, OIR.call(OP_SUM, arg8, arg7))
+arg10 = OIR.addinstruction!(bb, OIR.call(OP_SUM, arg9, arg5))
+arg11 = OIR.addinstruction!(bb, OIR.call(OP_MUL, arg10, arg5))
+arg12 = OIR.addinstruction!(bb, OIR.call(OP_DIV, arg11, arg2))
+arg13 = OIR.constant(0.0)
+arg14 = OIR.addinstruction!(bb, OIR.call(OP_MUL, arg13, x))
+arg15 = OIR.addinstruction!(bb, OIR.call(OP_SUM, arg14, arg12))
+arg16 = OIR.constant(1.0)
+arg17 = OIR.addinstruction!(bb, OIR.call(OP_SUM, arg16, arg15))
+arg18 = OIR.addinstruction!(bb, OIR.call(OP_MUL, arg16, arg17))
+var_output = OIR.MutableVariable(:output)
+OIR.addoutput!(bb, var_output)
+OIR.assign!(bb, var_output, arg18)
+
+println(bb)</code></pre><pre class="documenter-example-output">BasicBlock
+---------------
+
+Instructions
+---------------
+1 |  Pure  | call(+, 20.0::Float64, x)
+2 |  Pure  | call(-, %1)
+3 |  Pure  | call(+, %1, %2)
+4 |  Pure  | call(+, %3, 1.0::Float64)
+5 |  Pure  | call(/, %4, 2.0::Float64)
+6 |  Pure  | call(*, 0.0::Float64, x)
+7 |  Pure  | call(+, %6, %5)
+8 |  Pure  | call(+, 1.0::Float64, %7)
+9 | Impure | output = %8
+---------------
+
+Inputs
+---------------
+1 | x
+---------------
+
+Variables - Local Mutables
+---------------
+output
+---------------
+
+Variables - Local Immutables
+---------------
+---------------
+
+Outputs
+---------------
+1 | output
+---------------</pre><p>From an IR, you can compile it to a function.</p><p>Compiling with <a href="api/#OptimizingIR.BasicBlockInterpreter"><code>OptimizingIR.BasicBlockInterpreter</code></a> generates a function that is interpreted when it executes.</p><pre><code class="language-julia">finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)
+println(&quot;finterpreter(10.0) = $( finterpreter(10.0) )&quot;)</code></pre><pre class="documenter-example-output">finterpreter(10.0) = 1.5</pre><p>Compiling with <a href="api/#OptimizingIR.Native"><code>OptimizingIR.Native</code></a> will compile a new Julia function to machine code.</p><pre><code class="language-julia">fnative = OIR.compile(OIR.Native, bb)
+println(&quot;fnative(10.0) = $( fnative(10.0) )&quot;)</code></pre><pre class="documenter-example-output">fnative(10.0) = 1.5</pre><h2 id="World-Age-Problem"><a class="docs-heading-anchor" href="#World-Age-Problem">World Age Problem</a><a id="World-Age-Problem-1"></a><a class="docs-heading-anchor-permalink" href="#World-Age-Problem" title="Permalink"></a></h2><p>When using <a href="api/#OptimizingIR.Native"><code>OptimizingIR.Native</code></a>, if you compile a new function and call it before reaching global scope you may get a World Age Problem.</p><p>As an example, consider the following code:</p><pre><code class="language-julia">using OptimizingIR
+const OIR = OptimizingIR
+
+const OP_POW = OIR.Op(^, pure=true, hasrightidentity=true, identity_element=1)
+
+function gen_and_run()
+    bb = OIR.BasicBlock()
+    input_var = OIR.ImmutableVariable(:x)
+    OIR.addinput!(bb, input_var)
+    c2 = OIR.constant(2)
+    arg1 = OIR.addinstruction!(bb, OIR.call(OP_POW, input_var, c2))
+    var_result = OIR.ImmutableVariable(:result)
+    OIR.assign!(bb, var_result, arg1)
+    OIR.addoutput!(bb, var_result)
+
+    f = OIR.compile(OIR.Native, bb)
+    return f(2) # call the function before reaching global scope
+end</code></pre><p>Calling <code>gen_and_run</code> yield an error.</p><pre><code class="language-julia">julia&gt; gen_and_run()
+ERROR: MethodError: no method matching ##371(::Int64)
+The applicable method may be too new: running in world age 26050, while current world is 26052.</code></pre><p>You can Google for &quot;julia world age problem&quot; to get the details. One way to solve this is to use <code>Base.invokelatest</code> to call the function.</p><pre><code class="language-julia">using OptimizingIR
+const OIR = OptimizingIR
+
+const OP_POW = OIR.Op(^, pure=true, hasrightidentity=true, identity_element=1)
+
+function gen_and_run()
+    bb = OIR.BasicBlock()
+    input_var = OIR.ImmutableVariable(:x)
+    OIR.addinput!(bb, input_var)
+    c2 = OIR.constant(2)
+    arg1 = OIR.addinstruction!(bb, OIR.call(OP_POW, input_var, c2))
+    var_result = OIR.ImmutableVariable(:result)
+    OIR.assign!(bb, var_result, arg1)
+    OIR.addoutput!(bb, var_result)
+
+    f = OIR.compile(OIR.Native, bb)
+    return Base.invokelatest(f, 2) # using Base.invokelatest
+end</code></pre><p>Running the fixed version of <code>gen_and_run</code> yield the expected result.</p><pre><code class="language-julia">julia&gt; gen_and_run()
+4</code></pre><h2 id="Limitations"><a class="docs-heading-anchor" href="#Limitations">Limitations</a><a id="Limitations-1"></a><a class="docs-heading-anchor-permalink" href="#Limitations" title="Permalink"></a></h2><ul><li><p>Currently supports Basic Blocks only (no control flow).</p></li><li><p>Input variables (function arguments) must be Immutable.</p></li></ul><h2 id="Source-Code"><a class="docs-heading-anchor" href="#Source-Code">Source Code</a><a id="Source-Code-1"></a><a class="docs-heading-anchor-permalink" href="#Source-Code" title="Permalink"></a></h2><p>The source code for this package is hosted at <a href="https://github.com/felipenoris/OptimizingIR.jl">https://github.com/felipenoris/OptimizingIR.jl</a>.</p><h2 id="License"><a class="docs-heading-anchor" href="#License">License</a><a id="License-1"></a><a class="docs-heading-anchor-permalink" href="#License" title="Permalink"></a></h2><p>The source code for the package <strong>OptimizingIR.jl</strong> is licensed under the <a href="https://raw.githubusercontent.com/felipenoris/OptimizingIR.jl/master/LICENSE">MIT License</a>.</p><h2 id="Alternative-Packages"><a class="docs-heading-anchor" href="#Alternative-Packages">Alternative Packages</a><a id="Alternative-Packages-1"></a><a class="docs-heading-anchor-permalink" href="#Alternative-Packages" title="Permalink"></a></h2><ul><li><a href="https://github.com/MikeInnes/IRTools.jl">IRTools.jl</a></li></ul></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="api/">API Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 27 April 2021 18:02">Tuesday 27 April 2021</span>. Using Julia version 1.6.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
