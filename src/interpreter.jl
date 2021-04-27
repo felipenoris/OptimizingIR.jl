@@ -1,17 +1,4 @@
 
-"""
-A CompiledBasicBlock mirrors BasicBlock
-but the instructions LookupTable is replaced
-with Vector to save memory.
-"""
-struct CompiledBasicBlock <: Program
-    instructions::Vector{LinearInstruction}
-    inputs::LookupTable{ImmutableVariable}
-    mutable_locals::LookupTable{MutableVariable}
-    immutable_locals::Dict{ImmutableVariable, ImmutableValue}
-    outputs::LookupTable{Variable}
-end
-
 function CompiledBasicBlock(b::BasicBlock)
     return CompiledBasicBlock(b.instructions.entries, b.inputs, b.mutable_locals, b.immutable_locals, b.outputs)
 end

@@ -384,7 +384,23 @@ end
     end
 
     let
+        f = OIR.compile(OIR.BasicBlockInterpreter, OIR.CompiledBasicBlock(bb))
+        cnst, slot, output = f(input)
+        @test slot == 11.0
+        @test output == 1.0 + 10.0 + 10.0
+        @test cnst == 1.0
+    end
+
+    let
         f = OIR.compile(OIR.Native, bb)
+        cnst, slot, output = f(input)
+        @test slot == 11.0
+        @test output == 1.0 + 10.0 + 10.0
+        @test cnst == 1.0
+    end
+
+    let
+        f = OIR.compile(OIR.Native, OIR.CompiledBasicBlock(bb))
         cnst, slot, output = f(input)
         @test slot == 11.0
         @test output == 1.0 + 10.0 + 10.0

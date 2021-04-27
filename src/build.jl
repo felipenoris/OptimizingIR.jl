@@ -30,6 +30,7 @@ end
 Base.iterate(itr::InstructionIterator) = iterate(itr.instructions)
 Base.iterate(itr::InstructionIterator, state) = iterate(itr.instructions, state)
 eachinstruction(bb::BasicBlock) = InstructionIterator(bb.instructions)
+eachinstruction(bb::CompiledBasicBlock) = InstructionIterator(bb.instructions)
 
 """
     has_symbol(bb::BasicBlock, sym::Symbol) :: Bool
