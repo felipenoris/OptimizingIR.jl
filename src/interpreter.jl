@@ -69,10 +69,13 @@ end
 compile(::Type{BasicBlockInterpreter}, program::Program) = BasicBlockInterpreter(program)
 
 function set_input!(machine::BasicBlockInterpreter, input)
-    @assert length(input_variables(machine.program)) == length(machine.input_values)
-    @assert length(input) == length(machine.input_values) "Expected $(length(machine.input_values)) arguments. Got $(length(input))."
 
-    for i in 1:length(machine.input_values)
+    input_variables_count = length(input_variables(machine.program))
+
+    @assert input_variables_count <= length(machine.input_values)
+    @assert input_variables_count == length(input) "Expected $input_variables_count arguments. Got $(length(input))."
+
+    for i in 1:input_variables_count
         @inbounds machine.input_values[i] = input[i]
     end
 
