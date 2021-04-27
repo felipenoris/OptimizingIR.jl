@@ -12,7 +12,7 @@ F Call Native 1st
 F Call Native 2nd
   0.000006 seconds (4 allocations: 176 bytes)
 F Call Interpreter 1st
-  0.052958 seconds (122.28 k allocations: 7.433 MiB, 99.53% compilation time)
+  0.054123 seconds (121.41 k allocations: 7.389 MiB, 99.51% compilation time)
 F Call Interpreter 2nd
   0.000062 seconds (37 allocations: 976 bytes)
 F Call Julia 1st
