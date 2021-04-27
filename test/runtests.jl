@@ -392,6 +392,20 @@ end
     end
 
     let
+        mem_buff = Vector{Any}(undef, 10_000)
+        input_buff = Vector{Any}(undef, 1_000)
+
+        f = OIR.BasicBlockInterpreter(bb, mem_buff, input_buff)
+        cnst, slot, output = f(input)
+        @test slot == 11.0
+        @test output == 1.0 + 10.0 + 10.0
+        @test cnst == 1.0
+
+        @test length(mem_buff) == 10_000
+        @test length(input_buff) == 1_000
+    end
+
+    let
         f = OIR.compile(OIR.Native, bb)
         cnst, slot, output = f(input)
         @test slot == 11.0
