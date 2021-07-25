@@ -76,7 +76,7 @@ after the execution of the instruction.
 function addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: ImmutableValue
 
     result = try_on_add_instruction_passes(b, instruction)
-    if result != nothing
+    if result !== nothing
         return result
     end
 
@@ -109,7 +109,7 @@ function check_args_mutability(op, args...)
 
     or = optimization_rule(op)
 
-    if or.mutable_arg == nothing
+    if or.mutable_arg === nothing
         # no-op
         return
 

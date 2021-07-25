@@ -184,7 +184,7 @@ while running `addinstruction!`:
 function addinstruction!(b::BasicBlock, instruction::LinearInstruction) :: ImmutableValue
 
     result = try_on_add_instruction_passes(b, instruction)
-    if result != nothing
+    if result !== nothing
         return result
     end
 

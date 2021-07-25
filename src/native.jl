@@ -24,7 +24,7 @@ function build_function_body_expr(ir::BB)
 
         expr = julia_expr(ir, instruction)
 
-        if expr != nothing
+        if expr !== nothing
             push!(block.args, Expr(:(=), tmpsym(i), expr))
         end
     end
