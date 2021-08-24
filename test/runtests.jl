@@ -126,6 +126,7 @@ end
         OIR.assign!(bb, var_output, arg9)
 
         println(bb)
+        println(OIR.CompiledBasicBlock(bb))
         @test length(bb.instructions) == 3
 
         input = 20.0

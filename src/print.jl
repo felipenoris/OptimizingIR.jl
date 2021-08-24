@@ -1,5 +1,5 @@
 
-function Base.show(io::IO, b::BasicBlock)
+function Base.show(io::IO, b::T) where {T<:Union{BasicBlock, CompiledBasicBlock}}
 
     sep() = println(io, "---------------")
     purity_str(instruction) = is_pure(instruction) ? " Pure " : "Impure"
