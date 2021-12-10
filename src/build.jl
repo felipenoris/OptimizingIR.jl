@@ -161,17 +161,14 @@ end
     end
 end
 
-@generated function call(op::Op, args...) :: LinearInstruction
-    for a in args
-        @assert a <: AbstractValue "Found argument of type $(a) that is not an AbstractValue."
-    end
+@generated function call(op::Op, arg1::A, arg2::B, arg3::C) :: LinearInstruction where {A<:AbstractValue, B<:AbstractValue, C<:AbstractValue}
 
-    check_args_mutability(op, args...)
+    check_args_mutability(op, arg1, arg2, arg3)
 
-    pure = is_pure(op) && all(is_immutable.(args))
+    pure = is_pure(op) && is_immutable(arg1) && is_immutable(arg2) && is_immutable(arg3)
     wrapper_type = pure ? :PureInstruction : :ImpureInstruction
     return quote
-        $wrapper_type(CallVararg(op, args))
+        $wrapper_type(Call3Args(op, arg1, arg2, arg3))
     end
 end
 

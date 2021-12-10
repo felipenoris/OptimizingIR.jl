@@ -123,7 +123,7 @@ end
         @test finterpreter(input) ≈ 20.0^2 + 10.0
     end
 
-    @testset "CallVararg" begin
+    @testset "Call3Args" begin
 
         bb = OIR.BasicBlock()
         var_x = OIR.ImmutableVariable(:x)

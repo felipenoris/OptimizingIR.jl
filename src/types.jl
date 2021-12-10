@@ -276,9 +276,11 @@ struct CallBinary{OP, A<:AbstractValue, B<:AbstractValue} <: AbstractOpCall{OP}
     arg2::B
 end
 
-struct CallVararg{OP, N} <: AbstractOpCall{OP}
+struct Call3Args{OP, A<:AbstractValue, B<:AbstractValue, C<:AbstractValue} <: AbstractOpCall{OP}
     op::OP
-    args::NTuple{N, AbstractValue}
+    arg1::A
+    arg2::B
+    arg3::C
 end
 
 abstract type Program end

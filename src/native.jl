@@ -66,8 +66,8 @@ function julia_expr(bb::BB, c::CallBinary)
     Expr(:call, c.op, julia_expr(bb, c.arg1), julia_expr(bb, c.arg2))
 end
 
-function julia_expr(bb::BB, c::CallVararg)
-    Expr(:call, c.op, map( arg -> julia_expr(bb, arg), c.args)...)
+function julia_expr(bb::BB, c::Call3Args)
+    Expr(:call, c.op, julia_expr(bb, c.arg1), julia_expr(bb, c.arg2), julia_expr(bb, c.arg3))
 end
 
 julia_expr(bb::BB, c::ImpureInstruction) = julia_expr(bb, c.call)
