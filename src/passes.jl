@@ -57,14 +57,8 @@ end
     is_pure(OP) && is_immutable(A) && is_immutable(B)
 end
 
-@generated function is_pure(call::CallVararg{OP}) where {OP}
-    if is_pure(OP)
-        return quote
-            all(is_immutable(i) for i in call.args)
-        end
-    else
-        return false
-    end
+@generated function is_pure(call::Call3Args{OP, A, B, C}) where {OP,A,B,C}
+    is_pure(OP) && is_immutable(A) && is_immutable(B) && is_immutable(C)
 end
 
 is_impure(call::AbstractOpCall) = !is_pure(call)
@@ -109,11 +103,11 @@ function try_constant_propagation(b::BasicBlock, instruction::CallBinary{OP, C1,
     return OptimizationPassResult(true, Const(instruction.op(arg1.val, arg2.val)))
 end
 
-function try_constant_propagation(b::BasicBlock, instruction::CallVararg)
-    if all(map(arg -> isa(arg, Const), instruction.args))
-        return OptimizationPassResult(true, Const(instruction.op( map(arg -> arg.val, instruction.args)... )))
-    end
-    return FAILED_OPTIMIZATION_PASS
+function try_constant_propagation(b::BasicBlock, instruction::Call3Args{OP, C1, C2, C3}) where {OP, C1<:Const, C2<:Const, C3<:Const}
+    arg1 = instruction.arg1
+    arg2 = instruction.arg2
+    arg3 = instruction.arg3
+    return OptimizationPassResult(true, Const(instruction.op(arg1.val, arg2.val, arg3.val)))
 end
 
 #

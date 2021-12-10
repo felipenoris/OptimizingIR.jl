@@ -54,8 +54,8 @@ end
 
 Base.show(io::IO, v::Variable) = print(io, "$(v.symbol)")
 Base.show(io::IO, ssa::SSAValue) = print(io, "%$(ssa.address)")
-Base.show(io::IO, call::CallBinary) = print(io, "call($(call.op), $(call.arg1), $(call.arg2))")
 Base.show(io::IO, call::CallUnary) = print(io, "call($(call.op), $(call.arg))")
-Base.show(io::IO, call::CallVararg) = print(io, "call($(call.op), $(call.args))")
+Base.show(io::IO, call::CallBinary) = print(io, "call($(call.op), $(call.arg1), $(call.arg2))")
+Base.show(io::IO, call::Call3Args) = print(io, "call($(call.op), $(call.arg1), $(call.arg2), $(call.arg3))")
 Base.show(io::IO, op::Op) = print(io, "$(op.op)")
 Base.show(io::IO, op::Assignment) = print(io, "$(op.lhs) = $(op.rhs)")
