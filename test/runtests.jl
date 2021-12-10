@@ -8,6 +8,7 @@ using Test
 end
 
 foreign_fun(a, b, c) = a^3 + b^2 + c
+foreign_fun_binary(a, b) = a^2 + b
 julia_basic_block_test_function(x::Number) = (((-((10.0 * 2.0 + x) / 1.0) + (x + 10.0 * 2.0) + 1.0) * 1.0 / 2.0) + (0.0 * x) + 1.0) * 1.0
 julia_native_test_function(x::Number, y::Number, z::Number) = x^3 + y^2 + z
 
@@ -22,6 +23,7 @@ const OP_MUL = OIR.Op(*, pure=true, commutative=true, hasleftidentity=true, hasr
 const OP_DIV = OIR.Op(/, pure=true, hasrightidentity=true, identity_element=1)
 const OP_POW = OIR.Op(^, pure=true, hasrightidentity=true, identity_element=1)
 const OP_FOREIGN_FUN = OIR.Op(foreign_fun, pure=true)
+const OP_FOREIGN_FUN_BINARY = OIR.Op(foreign_fun_binary, pure=true)
 const OP_ZEROS = OIR.Op(zeros)
 
 const OP_GETINDEX = OIR.Op(Base.getindex, pure=true)
@@ -105,6 +107,21 @@ end
 end
 
 @testset "call" begin
+
+    @testset "Call Foreign Fun Binary" begin
+        bb = OIR.BasicBlock()
+        var_x = OIR.ImmutableVariable(:x)
+        OIR.addinput!(bb, var_x)
+        arg2 = OIR.constant(10.0)
+        arg4 = OIR.addinstruction!(bb, OIR.call(OP_FOREIGN_FUN_BINARY, var_x, arg2))
+        var_output = OIR.ImmutableVariable(:output)
+        OIR.addoutput!(bb, var_output)
+        OIR.assign!(bb, var_output, arg4)
+
+        input = 20.0
+        finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)
+        @test finterpreter(input) ≈ 20.0^2 + 10.0
+    end
 
     @testset "CallVararg" begin
 
