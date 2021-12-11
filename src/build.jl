@@ -172,6 +172,39 @@ end
     end
 end
 
+@generated function call(op::Op, arg1::A, arg2::B, arg3::C, arg4::D) :: LinearInstruction where {A<:AbstractValue, B<:AbstractValue, C<:AbstractValue, D<:AbstractValue}
+
+    check_args_mutability(op, arg1, arg2, arg3, arg4)
+
+    pure = is_pure(op) && is_immutable(arg1) && is_immutable(arg2) && is_immutable(arg3) && is_immutable(arg4)
+    wrapper_type = pure ? :PureInstruction : :ImpureInstruction
+    return quote
+        $wrapper_type(Call4Args(op, arg1, arg2, arg3, arg4))
+    end
+end
+
+@generated function call(op::Op, arg1::A, arg2::B, arg3::C, arg4::D, arg5::E) :: LinearInstruction where {A<:AbstractValue, B<:AbstractValue, C<:AbstractValue, D<:AbstractValue, E<:AbstractValue}
+
+    check_args_mutability(op, arg1, arg2, arg3, arg4, arg5)
+
+    pure = is_pure(op) && is_immutable(arg1) && is_immutable(arg2) && is_immutable(arg3) && is_immutable(arg4) && is_immutable(arg5)
+    wrapper_type = pure ? :PureInstruction : :ImpureInstruction
+    return quote
+        $wrapper_type(Call5Args(op, arg1, arg2, arg3, arg4, arg5))
+    end
+end
+
+@generated function call(op::Op, arg1::A, arg2::B, arg3::C, arg4::D, arg5::E, arg6::F) :: LinearInstruction where {A<:AbstractValue, B<:AbstractValue, C<:AbstractValue, D<:AbstractValue, E<:AbstractValue, F<:AbstractValue}
+
+    check_args_mutability(op, arg1, arg2, arg3, arg4, arg5, arg6)
+
+    pure = is_pure(op) && is_immutable(arg1) && is_immutable(arg2) && is_immutable(arg3) && is_immutable(arg4) && is_immutable(arg5) && is_immutable(arg6)
+    wrapper_type = pure ? :PureInstruction : :ImpureInstruction
+    return quote
+        $wrapper_type(Call6Args(op, arg1, arg2, arg3, arg4, arg5, arg6))
+    end
+end
+
 """
     assign!(bb::BasicBlock, lhs::Variable, rhs::AbstractValue)
 

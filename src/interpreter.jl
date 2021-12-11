@@ -116,6 +116,9 @@ execute_op(machine::BasicBlockInterpreter, op::ImpureInstruction) = execute_op(m
 execute_op(machine::BasicBlockInterpreter, op::CallUnary) = op.op(deref(machine, op.arg))
 execute_op(machine::BasicBlockInterpreter, op::CallBinary) = op.op(deref(machine, op.arg1), deref(machine, op.arg2))
 execute_op(machine::BasicBlockInterpreter, op::Call3Args) = op.op(deref(machine, op.arg1), deref(machine, op.arg2), deref(machine, op.arg3))
+execute_op(machine::BasicBlockInterpreter, op::Call4Args) = op.op(deref(machine, op.arg1), deref(machine, op.arg2), deref(machine, op.arg3), deref(machine, op.arg4))
+execute_op(machine::BasicBlockInterpreter, op::Call5Args) = op.op(deref(machine, op.arg1), deref(machine, op.arg2), deref(machine, op.arg3), deref(machine, op.arg4), deref(machine, op.arg5))
+execute_op(machine::BasicBlockInterpreter, op::Call6Args) = op.op(deref(machine, op.arg1), deref(machine, op.arg2), deref(machine, op.arg3), deref(machine, op.arg4), deref(machine, op.arg5), deref(machine, op.arg6))
 
 function execute_op(::BasicBlockInterpreter, ::Assignment{V}) where {V<:ImmutableVariable}
     # no-op

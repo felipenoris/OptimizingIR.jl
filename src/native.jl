@@ -70,6 +70,18 @@ function julia_expr(bb::BB, c::Call3Args)
     Expr(:call, c.op, julia_expr(bb, c.arg1), julia_expr(bb, c.arg2), julia_expr(bb, c.arg3))
 end
 
+function julia_expr(bb::BB, c::Call4Args)
+    Expr(:call, c.op, julia_expr(bb, c.arg1), julia_expr(bb, c.arg2), julia_expr(bb, c.arg3), julia_expr(bb, c.arg4))
+end
+
+function julia_expr(bb::BB, c::Call5Args)
+    Expr(:call, c.op, julia_expr(bb, c.arg1), julia_expr(bb, c.arg2), julia_expr(bb, c.arg3), julia_expr(bb, c.arg4), julia_expr(bb, c.arg5))
+end
+
+function julia_expr(bb::BB, c::Call6Args)
+    Expr(:call, c.op, julia_expr(bb, c.arg1), julia_expr(bb, c.arg2), julia_expr(bb, c.arg3), julia_expr(bb, c.arg4), julia_expr(bb, c.arg5), julia_expr(bb, c.arg6))
+end
+
 julia_expr(bb::BB, c::ImpureInstruction) = julia_expr(bb, c.call)
 julia_expr(bb::BB, c::PureInstruction) = julia_expr(bb, c.call)
 

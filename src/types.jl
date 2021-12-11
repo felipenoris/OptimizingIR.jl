@@ -283,6 +283,33 @@ struct Call3Args{OP, A<:AbstractValue, B<:AbstractValue, C<:AbstractValue} <: Ab
     arg3::C
 end
 
+struct Call4Args{OP, A<:AbstractValue, B<:AbstractValue, C<:AbstractValue, D<:AbstractValue} <: AbstractOpCall{OP}
+    op::OP
+    arg1::A
+    arg2::B
+    arg3::C
+    arg4::D
+end
+
+struct Call5Args{OP, A<:AbstractValue, B<:AbstractValue, C<:AbstractValue, D<:AbstractValue, E<:AbstractValue} <: AbstractOpCall{OP}
+    op::OP
+    arg1::A
+    arg2::B
+    arg3::C
+    arg4::D
+    arg5::E
+end
+
+struct Call6Args{OP, A<:AbstractValue, B<:AbstractValue, C<:AbstractValue, D<:AbstractValue, E<:AbstractValue, F<:AbstractValue} <: AbstractOpCall{OP}
+    op::OP
+    arg1::A
+    arg2::B
+    arg3::C
+    arg4::D
+    arg5::E
+    arg6::F
+end
+
 abstract type Program end
 
 mutable struct BasicBlock <: Program
