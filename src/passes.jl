@@ -61,6 +61,18 @@ end
     is_pure(OP) && is_immutable(A) && is_immutable(B) && is_immutable(C)
 end
 
+@generated function is_pure(call::Call4Args{OP, A, B, C, D}) where {OP,A,B,C,D}
+    is_pure(OP) && is_immutable(A) && is_immutable(B) && is_immutable(C) && is_immutable(D)
+end
+
+@generated function is_pure(call::Call5Args{OP, A, B, C, D, E}) where {OP,A,B,C,D,E}
+    is_pure(OP) && is_immutable(A) && is_immutable(B) && is_immutable(C) && is_immutable(D) && is_immutable(E)
+end
+
+@generated function is_pure(call::Call6Args{OP, A, B, C, D, E, F}) where {OP,A,B,C,D,E,F}
+    is_pure(OP) && is_immutable(A) && is_immutable(B) && is_immutable(C) && is_immutable(D) && is_immutable(E) && is_immutable(F)
+end
+
 is_impure(call::AbstractOpCall) = !is_pure(call)
 
 is_pure(::PureInstruction) = true
@@ -108,6 +120,33 @@ function try_constant_propagation(b::BasicBlock, instruction::Call3Args{OP, C1, 
     arg2 = instruction.arg2
     arg3 = instruction.arg3
     return OptimizationPassResult(true, Const(instruction.op(arg1.val, arg2.val, arg3.val)))
+end
+
+function try_constant_propagation(b::BasicBlock, instruction::Call4Args{OP, C1, C2, C3, C4}) where {OP, C1<:Const, C2<:Const, C3<:Const, C4<:Const}
+    arg1 = instruction.arg1
+    arg2 = instruction.arg2
+    arg3 = instruction.arg3
+    arg4 = instruction.arg4
+    return OptimizationPassResult(true, Const(instruction.op(arg1.val, arg2.val, arg3.val, arg4.val)))
+end
+
+function try_constant_propagation(b::BasicBlock, instruction::Call5Args{OP, C1, C2, C3, C4, C5}) where {OP, C1<:Const, C2<:Const, C3<:Const, C4<:Const, C5<:Const}
+    arg1 = instruction.arg1
+    arg2 = instruction.arg2
+    arg3 = instruction.arg3
+    arg4 = instruction.arg4
+    arg5 = instruction.arg5
+    return OptimizationPassResult(true, Const(instruction.op(arg1.val, arg2.val, arg3.val, arg4.val, arg5.val)))
+end
+
+function try_constant_propagation(b::BasicBlock, instruction::Call6Args{OP, C1, C2, C3, C4, C5, C6}) where {OP, C1<:Const, C2<:Const, C3<:Const, C4<:Const, C5<:Const, C6<:Const}
+    arg1 = instruction.arg1
+    arg2 = instruction.arg2
+    arg3 = instruction.arg3
+    arg4 = instruction.arg4
+    arg5 = instruction.arg5
+    arg6 = instruction.arg6
+    return OptimizationPassResult(true, Const(instruction.op(arg1.val, arg2.val, arg3.val, arg4.val, arg5.val, arg6.val)))
 end
 
 #
