@@ -11,7 +11,7 @@ end
 
 const NULL_IDENTITY_ELEMENT = NullIdentityElement()
 
-has_identity_element(rule::OptimizationRule) = rule.identity_element != NULL_IDENTITY_ELEMENT
+has_identity_element(rule::OptimizationRule) = rule.identity_element !== NULL_IDENTITY_ELEMENT
 
 function get_identity_element(rule::OptimizationRule)
     @assert has_identity_property(rule) && has_identity_element(rule)
