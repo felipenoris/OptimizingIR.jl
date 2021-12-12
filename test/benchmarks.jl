@@ -75,6 +75,9 @@ println("Compile Native:")
 println("Compile BasicBlockInterpreter")
 @time finterpreter = OIR.compile(OIR.BasicBlockInterpreter, bb)
 
+println("Compile BasicBlockInterpreter{Float64}")
+@time finterpreter_float64 = OIR.compile(OIR.BasicBlockInterpreter{Union{Nothing, Float64, Vector{Float64}}}, bb)
+
 compilation_el_native = @elapsed OIR.compile(OIR.Native, bb)
 compilation_el_interpreter = @elapsed OIR.compile(OIR.BasicBlockInterpreter, bb)
 println("Compilation Overhead: Native / BasicBlockInterpreter: $(round(compilation_el_native / compilation_el_interpreter, digits=1))x")
@@ -92,6 +95,12 @@ println("F Call Interpreter 1st")
 
 println("F Call Interpreter 2nd")
 @time result_interpreter = finterpreter(input...)
+
+println("F Call Interpreter Float64 1st")
+@time result_interpreter = finterpreter_float64(input...)
+
+println("F Call Interpreter Float64 2nd")
+@time result_interpreter = finterpreter_float64(input...)
 
 println("F Call Julia 1st")
 @time result_julia = benchmark_julia(input...)

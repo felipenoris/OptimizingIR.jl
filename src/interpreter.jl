@@ -16,18 +16,18 @@ end
 @inline required_input_values_size(program::BasicBlock) = length(input_variables(program))
 
 "Used to compile to a function that is interpreted when executed."
-mutable struct BasicBlockInterpreter <: AbstractMachine
+mutable struct BasicBlockInterpreter{T} <: AbstractMachine
     program::CompiledBasicBlock
-    memory::Vector{Any}
-    input_values::Vector{Any}
-    runtime_bindings::Dict{MutableVariable, Any}
+    memory::Vector{T}
+    input_values::Vector{T}
+    runtime_bindings::Dict{MutableVariable, T}
 
     function BasicBlockInterpreter(
                 program::CompiledBasicBlock,
-                memory_buffer::Vector{Any},
-                input_values_buffer::Vector{Any};
+                memory_buffer::Vector{T},
+                input_values_buffer::Vector{T};
                 auto_resize_buffers::Bool=true
-            )
+            ) where {T}
 
         #@assert !hasbranches(b) "BasicBlockInterpreter does not support branches"
 
@@ -44,29 +44,30 @@ mutable struct BasicBlockInterpreter <: AbstractMachine
             @assert length(input_values_buffer) >= required_input_values_size(program)
         end
 
-        return new(program, memory_buffer, input_values_buffer, Dict{MutableVariable, Any}())
+        return new{T}(program, memory_buffer, input_values_buffer, Dict{MutableVariable, T}())
     end
 end
 
 function BasicBlockInterpreter(
             b::BasicBlock,
-            memory_buffer::Vector{Any},
-            input_values_buffer::Vector{Any};
+            memory_buffer::Vector{T},
+            input_values_buffer::Vector{T};
             auto_resize_buffers::Bool=true
-        )
+        ) where {T}
 
     return BasicBlockInterpreter(CompiledBasicBlock(b), memory_buffer, input_values_buffer, auto_resize_buffers=auto_resize_buffers)
 end
 
-function BasicBlockInterpreter(b::BasicBlock)
-    return BasicBlockInterpreter(b, Vector{Any}(undef, required_memory_size(b)), Vector{Any}(undef, required_input_values_size(b)), auto_resize_buffers=false)
+function BasicBlockInterpreter(b::BasicBlock; word_type::Type{T}=Any) where {T}
+    return BasicBlockInterpreter(b, Vector{word_type}(undef, required_memory_size(b)), Vector{word_type}(undef, required_input_values_size(b)), auto_resize_buffers=false)
 end
 
-function BasicBlockInterpreter(b::CompiledBasicBlock)
-    return BasicBlockInterpreter(b, Vector{Any}(undef, required_memory_size(b)), Vector{Any}(undef, required_input_values_size(b)), auto_resize_buffers=false)
+function BasicBlockInterpreter(b::CompiledBasicBlock; word_type::Type{T}=Any) where {T}
+    return BasicBlockInterpreter(b, Vector{word_type}(undef, required_memory_size(b)), Vector{word_type}(undef, required_input_values_size(b)), auto_resize_buffers=false)
 end
 
 compile(::Type{BasicBlockInterpreter}, program::Program) = BasicBlockInterpreter(program)
+compile(::Type{BasicBlockInterpreter{T}}, program::Program) where {T} = BasicBlockInterpreter(program, word_type=T)
 
 function set_input!(machine::BasicBlockInterpreter, input)
 
