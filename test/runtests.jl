@@ -26,6 +26,7 @@ const OP_SUB = OIR.Op(-, pure=true, hasrightidentity=true, identity_element=0)
 const OP_MUL = OIR.Op(*, pure=true, commutative=true, hasleftidentity=true, hasrightidentity=true, identity_element=1)
 const OP_DIV = OIR.Op(/, pure=true, hasrightidentity=true, identity_element=1)
 const OP_POW = OIR.Op(^, pure=true, hasrightidentity=true, identity_element=1)
+const OP_ABS = OIR.Op(abs, pure=true)
 const OP_FOREIGN_FUN_BINARY = OIR.Op(foreign_fun_binary, pure=true)
 const OP_FOREIGN_FUN_3ARGS = OIR.Op(foreign_fun_3args, pure=true)
 const OP_FOREIGN_FUN_4ARGS = OIR.Op(foreign_fun_4args, pure=true)
@@ -466,26 +467,145 @@ end
 
 @testset "Passes" begin
     @testset "Constant Propagation" begin
-        bb = OIR.BasicBlock()
-        x = OIR.constant(30.0)
-        y = OIR.constant(20.0)
-        z = OIR.constant(10.0)
-        out = OIR.addinstruction!(bb, OIR.call(OP_FOREIGN_FUN_3ARGS, x, y, z))
-        var_result = OIR.ImmutableVariable(:result)
-        OIR.addoutput!(bb, var_result)
-        OIR.assign!(bb, var_result, out)
-        @test isa(out, OIR.Const)
+        @testset "1ARG" begin
+            bb = OIR.BasicBlock()
+            x = OIR.constant(-30.0)
+            out = OIR.addinstruction!(bb, OIR.call(OP_ABS, x))
+            var_result = OIR.ImmutableVariable(:result)
+            OIR.addoutput!(bb, var_result)
+            OIR.assign!(bb, var_result, out)
+            @test isa(out, OIR.Const)
+            @test length(bb.instructions) == 1
 
-        # println(bb)
+            let
+                f = OIR.compile(OIR.BasicBlockInterpreter, bb)
+                @test f() ≈ 30.0
+            end
 
-        let
-            f = OIR.compile(OIR.BasicBlockInterpreter, bb)
-            @test f() ≈ foreign_fun_3args(30.0, 20.0, 10.0)
+            let
+                f = OIR.compile(OIR.Native, bb)
+                @test f() ≈ 30.0
+            end
         end
 
-        let
-            f = OIR.compile(OIR.Native, bb)
-            @test f() ≈ foreign_fun_3args(30.0, 20.0, 10.0)
+        @testset "2ARGS" begin
+            bb = OIR.BasicBlock()
+            x = OIR.constant(30.0)
+            y = OIR.constant(20.0)
+            out = OIR.addinstruction!(bb, OIR.call(OP_SUM, x, y))
+            var_result = OIR.ImmutableVariable(:result)
+            OIR.addoutput!(bb, var_result)
+            OIR.assign!(bb, var_result, out)
+            @test isa(out, OIR.Const)
+            @test length(bb.instructions) == 1
+
+            let
+                f = OIR.compile(OIR.BasicBlockInterpreter, bb)
+                @test f() ≈ 50.0
+            end
+
+            let
+                f = OIR.compile(OIR.Native, bb)
+                @test f() ≈ 50.0
+            end
+        end
+
+        @testset "3ARGS" begin
+            bb = OIR.BasicBlock()
+            x = OIR.constant(30.0)
+            y = OIR.constant(20.0)
+            z = OIR.constant(10.0)
+            out = OIR.addinstruction!(bb, OIR.call(OP_FOREIGN_FUN_3ARGS, x, y, z))
+            var_result = OIR.ImmutableVariable(:result)
+            OIR.addoutput!(bb, var_result)
+            OIR.assign!(bb, var_result, out)
+            @test isa(out, OIR.Const)
+            @test length(bb.instructions) == 1
+
+            let
+                f = OIR.compile(OIR.BasicBlockInterpreter, bb)
+                @test f() ≈ foreign_fun_3args(30.0, 20.0, 10.0)
+            end
+
+            let
+                f = OIR.compile(OIR.Native, bb)
+                @test f() ≈ foreign_fun_3args(30.0, 20.0, 10.0)
+            end
+        end
+
+        @testset "4ARGS" begin
+            bb = OIR.BasicBlock()
+            x = OIR.constant(30.0)
+            y = OIR.constant(20.0)
+            z = OIR.constant(10.0)
+            w = OIR.constant(100.0)
+            out = OIR.addinstruction!(bb, OIR.call(OP_FOREIGN_FUN_4ARGS, x, y, z, w))
+            var_result = OIR.ImmutableVariable(:result)
+            OIR.addoutput!(bb, var_result)
+            OIR.assign!(bb, var_result, out)
+            @test isa(out, OIR.Const)
+            @test length(bb.instructions) == 1
+
+            let
+                f = OIR.compile(OIR.BasicBlockInterpreter, bb)
+                @test f() ≈ foreign_fun_4args(30.0, 20.0, 10.0, 100.0)
+            end
+
+            let
+                f = OIR.compile(OIR.Native, bb)
+                @test f() ≈ foreign_fun_4args(30.0, 20.0, 10.0, 100.0)
+            end
+        end
+
+        @testset "5ARGS" begin
+            bb = OIR.BasicBlock()
+            x = OIR.constant(30.0)
+            y = OIR.constant(20.0)
+            z = OIR.constant(10.0)
+            w = OIR.constant(100.0)
+            t = OIR.constant(200.0)
+            out = OIR.addinstruction!(bb, OIR.call(OP_FOREIGN_FUN_5ARGS, x, y, z, w, t))
+            var_result = OIR.ImmutableVariable(:result)
+            OIR.addoutput!(bb, var_result)
+            OIR.assign!(bb, var_result, out)
+            @test isa(out, OIR.Const)
+            @test length(bb.instructions) == 1
+
+            let
+                f = OIR.compile(OIR.BasicBlockInterpreter, bb)
+                @test f() ≈ foreign_fun_5args(30.0, 20.0, 10.0, 100.0, 200.0)
+            end
+
+            let
+                f = OIR.compile(OIR.Native, bb)
+                @test f() ≈ foreign_fun_5args(30.0, 20.0, 10.0, 100.0, 200.0)
+            end
+        end
+
+        @testset "6ARGS" begin
+            bb = OIR.BasicBlock()
+            x = OIR.constant(30.0)
+            y = OIR.constant(20.0)
+            z = OIR.constant(10.0)
+            w = OIR.constant(100.0)
+            t = OIR.constant(200.0)
+            p = OIR.constant(300.0)
+            out = OIR.addinstruction!(bb, OIR.call(OP_FOREIGN_FUN_6ARGS, x, y, z, w, t, p))
+            var_result = OIR.ImmutableVariable(:result)
+            OIR.addoutput!(bb, var_result)
+            OIR.assign!(bb, var_result, out)
+            @test isa(out, OIR.Const)
+            @test length(bb.instructions) == 1
+
+            let
+                f = OIR.compile(OIR.BasicBlockInterpreter, bb)
+                @test f() ≈ foreign_fun_6args(30.0, 20.0, 10.0, 100.0, 200.0, 300.0)
+            end
+
+            let
+                f = OIR.compile(OIR.Native, bb)
+                @test f() ≈ foreign_fun_6args(30.0, 20.0, 10.0, 100.0, 200.0, 300.0)
+            end
         end
     end
 end
