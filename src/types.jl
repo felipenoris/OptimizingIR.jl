@@ -104,7 +104,7 @@ struct OptimizationRule{T, M<:Union{Integer, Tuple, NTuple, Nothing}}
             @assert pure "Can't apply commutative or identity optimization on impure op."
         end
 
-        new{T,M}(pure, commutative, hasleftidentity, hasrightidentity, identity_element, mutable_arg)
+        return new{T,M}(pure, commutative, hasleftidentity, hasrightidentity, identity_element, mutable_arg)
     end
 end
 
@@ -113,7 +113,7 @@ struct Op{F<:Function, O}
     op::F
 
     function Op(f::F, o::OptimizationRule) where {F<:Function}
-        new{F, o}(f)
+        return new{F, o}(f)
     end
 end
 
