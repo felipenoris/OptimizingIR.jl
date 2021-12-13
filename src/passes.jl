@@ -1,17 +1,17 @@
 
-is_pure(rule::OptimizationRule) = rule.pure
-is_impure(rule::OptimizationRule) = !is_pure(rule)
-is_commutative(rule::OptimizationRule) = rule.commutative
-has_left_identity_property(rule::OptimizationRule) = rule.hasleftidentity
-has_right_identity_property(rule::OptimizationRule) = rule.hasrightidentity
-has_identity_property(rule::OptimizationRule) = has_right_identity_property(rule) || has_left_identity_property(rule)
+@inline is_pure(rule::OptimizationRule) = rule.pure
+@inline is_impure(rule::OptimizationRule) = !is_pure(rule)
+@inline is_commutative(rule::OptimizationRule) = rule.commutative
+@inline has_left_identity_property(rule::OptimizationRule) = rule.hasleftidentity
+@inline has_right_identity_property(rule::OptimizationRule) = rule.hasrightidentity
+@inline has_identity_property(rule::OptimizationRule) = has_right_identity_property(rule) || has_left_identity_property(rule)
 
 struct NullIdentityElement
 end
 
 const NULL_IDENTITY_ELEMENT = NullIdentityElement()
 
-has_identity_element(rule::OptimizationRule) = rule.identity_element !== NULL_IDENTITY_ELEMENT
+@inline has_identity_element(rule::OptimizationRule) = rule.identity_element !== NULL_IDENTITY_ELEMENT
 
 function get_identity_element(rule::OptimizationRule)
     @assert has_identity_property(rule) && has_identity_element(rule)
@@ -49,35 +49,34 @@ for fun in (:is_commutative, :has_identity_property, :has_left_identity_property
 end
 
 # is_pure / is_impure for x, where x::T<:AbstractOpCall
-@generated function is_pure(call::CallUnary{OP, A}) where {OP,A}
+@inline function is_pure(::CallUnary{OP, A}) where {OP, A}
     is_pure(OP) && is_immutable(A)
 end
 
-@generated function is_pure(call::CallBinary{OP, A, B}) where {OP,A,B}
+@inline function is_pure(::CallBinary{OP, A, B}) where {OP, A, B}
     is_pure(OP) && is_immutable(A) && is_immutable(B)
 end
 
-@generated function is_pure(call::Call3Args{OP, A, B, C}) where {OP,A,B,C}
+@inline function is_pure(::Call3Args{OP, A, B, C}) where {OP, A, B, C}
     is_pure(OP) && is_immutable(A) && is_immutable(B) && is_immutable(C)
 end
 
-@generated function is_pure(call::Call4Args{OP, A, B, C, D}) where {OP,A,B,C,D}
+@inline function is_pure(::Call4Args{OP, A, B, C, D}) where {OP, A, B, C, D}
     is_pure(OP) && is_immutable(A) && is_immutable(B) && is_immutable(C) && is_immutable(D)
 end
 
-@generated function is_pure(call::Call5Args{OP, A, B, C, D, E}) where {OP,A,B,C,D,E}
+@inline function is_pure(::Call5Args{OP, A, B, C, D, E}) where {OP, A, B, C, D, E}
     is_pure(OP) && is_immutable(A) && is_immutable(B) && is_immutable(C) && is_immutable(D) && is_immutable(E)
 end
 
-@generated function is_pure(call::Call6Args{OP, A, B, C, D, E, F}) where {OP,A,B,C,D,E,F}
+@inline function is_pure(::Call6Args{OP, A, B, C, D, E, F}) where {OP, A, B, C, D, E, F}
     is_pure(OP) && is_immutable(A) && is_immutable(B) && is_immutable(C) && is_immutable(D) && is_immutable(E) && is_immutable(F)
 end
 
-is_impure(call::AbstractOpCall) = !is_pure(call)
-
-is_pure(::PureInstruction) = true
-is_pure(::ImpureInstruction) = false
-is_impure(i::LinearInstruction) = !is_pure(i)
+@inline is_impure(call::AbstractOpCall) = !is_pure(call)
+@inline is_pure(::PureInstruction) = true
+@inline is_pure(::ImpureInstruction) = false
+@inline is_impure(i::LinearInstruction) = !is_pure(i)
 
 #
 # Commutative ops
@@ -155,8 +154,8 @@ end
 
 try_identity_element_pass(b::BasicBlock, instruction) = FAILED_OPTIMIZATION_PASS
 
-is_const_with_value(instruction, val) = false
-is_const_with_value(c::Const, val) = c.val == val
+@inline is_const_with_value(instruction, val) = false
+@inline is_const_with_value(c::Const, val) = c.val == val
 
 @generated function try_identity_element_pass(b::BasicBlock, instruction::CallBinary{OP}) where {OP}
 
