@@ -16,7 +16,7 @@ end
 @inline required_input_values_size(program::BasicBlock) = length(input_variables(program))
 
 "Used to compile to a function that is interpreted when executed."
-mutable struct BasicBlockInterpreter{T} <: AbstractMachine
+struct BasicBlockInterpreter{T} <: AbstractMachine
     program::CompiledBasicBlock
     memory::Vector{T}
     input_values::Vector{T}
