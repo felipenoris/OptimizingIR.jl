@@ -11,7 +11,7 @@ Use `addentry!` to add items to the table.
 It the table already has the item, `addentry!`
 will return the existing item's index.
 """
-mutable struct LookupTable{T}
+struct LookupTable{T}
     entries::Vector{T}
     index::Dict{T, Int}
 
