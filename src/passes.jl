@@ -25,12 +25,10 @@ end
 for fun in (:is_pure, :is_impure, :is_commutative, :has_identity_property, :has_left_identity_property, :has_right_identity_property, :get_identity_element, :has_identity_element)
     @eval begin
         function ($fun)(::Type{Op{F, OPTRULE}}) where {F, OPTRULE}
-            @assert isa(OPTRULE, OptimizationRule)
             ($fun)(OPTRULE)
         end
 
         function ($fun)(::Op{F, OPTRULE}) where {F, OPTRULE}
-            @assert isa(OPTRULE, OptimizationRule)
             ($fun)(OPTRULE)
         end
     end
