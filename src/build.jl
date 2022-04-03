@@ -40,8 +40,10 @@ defined that is identified by the symbol `sym`.
 """
 function has_symbol(bb::BasicBlock, sym::Symbol) :: Bool
     for itr in (bb.inputs, bb.mutable_locals, keys(bb.immutable_locals), bb.outputs)
-        if any(v -> v.symbol == sym, itr)
-            return true
+        for v in itr
+            if v.symbol === sym
+                return true
+            end
         end
     end
 
