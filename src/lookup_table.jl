@@ -8,8 +8,6 @@ an ordered list of distinct elements.
 * `index[element]` retrieves the index `i`.
 
 Use `addentry!` to add items to the table.
-It the table already has the item, `addentry!`
-will return the existing item's index.
 """
 struct LookupTable{T}
     entries::Vector{T}
