@@ -361,7 +361,7 @@ end
 
     let
         fnative = OIR.compile(OIR.Native, bb)
-        out_vec, out_inspect1, out_inspect2, out_inspect3, out_inspect4 = fnative(3)
+        out_vec, out_inspect1, out_inspect2, out_inspect3, out_inspect4 = invokelatest(fnative, 3)
         @test out_inspect1 ≈ 0.0
         @test out_inspect2 ≈ 10.0
         @test isa(out_inspect2, Float64)
@@ -413,7 +413,7 @@ end
     let
         input = 10.0
         f = OIR.compile(OIR.Native, bb)
-        @test f(input) ≈ julia_basic_block_test_function(input)
+        @test invokelatest(f, input) ≈ julia_basic_block_test_function(input)
     end
 
     @testset "Multiply by zero" begin
@@ -429,7 +429,7 @@ end
 
         let
             f = OIR.compile(OIR.Native, bb)
-            @test f(10.0) == 0.0
+            @test invokelatest(f, 10.0) == 0.0
         end
     end
 end
@@ -461,7 +461,7 @@ end
 
     let
         f = OIR.compile(OIR.Native, bb)
-        @test f(30.0, 20.0, 10.0) ≈ foreign_fun_3args(30.0, 20.0, 10.0)
+        @test invokelatest(f, 30.0, 20.0, 10.0) ≈ foreign_fun_3args(30.0, 20.0, 10.0)
     end
 end
 
@@ -484,7 +484,7 @@ end
 
             let
                 f = OIR.compile(OIR.Native, bb)
-                @test f() ≈ 30.0
+                @test invokelatest(f) ≈ 30.0
             end
         end
 
@@ -506,7 +506,7 @@ end
 
             let
                 f = OIR.compile(OIR.Native, bb)
-                @test f() ≈ 50.0
+                @test invokelatest(f) ≈ 50.0
             end
         end
 
@@ -529,7 +529,7 @@ end
 
             let
                 f = OIR.compile(OIR.Native, bb)
-                @test f() ≈ foreign_fun_3args(30.0, 20.0, 10.0)
+                @test invokelatest(f) ≈ foreign_fun_3args(30.0, 20.0, 10.0)
             end
         end
 
@@ -553,7 +553,7 @@ end
 
             let
                 f = OIR.compile(OIR.Native, bb)
-                @test f() ≈ foreign_fun_4args(30.0, 20.0, 10.0, 100.0)
+                @test invokelatest(f) ≈ foreign_fun_4args(30.0, 20.0, 10.0, 100.0)
             end
         end
 
@@ -578,7 +578,7 @@ end
 
             let
                 f = OIR.compile(OIR.Native, bb)
-                @test f() ≈ foreign_fun_5args(30.0, 20.0, 10.0, 100.0, 200.0)
+                @test invokelatest(f) ≈ foreign_fun_5args(30.0, 20.0, 10.0, 100.0, 200.0)
             end
         end
 
@@ -604,7 +604,7 @@ end
 
             let
                 f = OIR.compile(OIR.Native, bb)
-                @test f() ≈ foreign_fun_6args(30.0, 20.0, 10.0, 100.0, 200.0, 300.0)
+                @test invokelatest(f) ≈ foreign_fun_6args(30.0, 20.0, 10.0, 100.0, 200.0, 300.0)
             end
         end
     end
@@ -666,7 +666,7 @@ end
 
     let
         f = OIR.compile(OIR.Native, bb)
-        cnst, slot, output = f(input)
+        cnst, slot, output = invokelatest(f, input)
         @test slot == 11.0
         @test output == 1.0 + 10.0 + 10.0
         @test cnst == 1.0
@@ -674,7 +674,7 @@ end
 
     let
         f = OIR.compile(OIR.Native, OIR.CompiledBasicBlock(bb))
-        cnst, slot, output = f(input)
+        cnst, slot, output = invokelatest(f, input)
         @test slot == 11.0
         @test output == 1.0 + 10.0 + 10.0
         @test cnst == 1.0
@@ -748,7 +748,7 @@ end
 
     let
         f = OIR.compile(OIR.Native, bb)
-        @test f(30.0, 20.0, 10.0) == julia_native_test_function(30.0, 20.0, 10.0)
+        @test invokelatest(f, 30.0, 20.0, 10.0) == julia_native_test_function(30.0, 20.0, 10.0)
     end
 end
 
